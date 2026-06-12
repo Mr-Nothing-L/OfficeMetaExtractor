@@ -1,7 +1,32 @@
 """Document metadata data model."""
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
+
+
+@dataclass
+class AuditAlert:
+    """Represents a single audit rule violation."""
+    rule_name: str
+    severity: str
+    description: str
+    affected_companies: List[str] = field(default_factory=list)
+    affected_files: List[str] = field(default_factory=list)
+    details: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class CompanyAuditResult:
+    """Aggregated audit view per company."""
+    company_name: str
+    file_count: int = 0
+    authors: List[str] = field(default_factory=list)
+    last_modified_by: List[str] = field(default_factory=list)
+    creation_time_range: Optional[tuple] = None
+    modification_time_range: Optional[tuple] = None
+    templates_used: List[str] = field(default_factory=list)
+    risk_score: int = 0
+    risk_level: str = "low"
 
 
 @dataclass
