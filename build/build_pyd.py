@@ -12,6 +12,14 @@ import sys
 import shutil
 from pathlib import Path
 
+# Ensure stdout/stderr use UTF-8 so Chinese log messages do not crash on
+# Windows runners whose console default code page is cp1252.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except (AttributeError, OSError):
+    pass
+
 
 def build_pyd():
     core_dir = Path(__file__).parent.parent / "src" / "core"
@@ -93,7 +101,9 @@ cdef class MetaExtractor:
         [sys.executable, str(setup_py), "build_ext", "--inplace"],
         cwd=str(core_dir),
         capture_output=True,
-        text=True
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
     if result.returncode != 0:
