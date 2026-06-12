@@ -1,0 +1,20 @@
+# Python 3.9+ recommended
+# UI
+PyQt5==5.15.10
+
+# Document parsing
+python-docx==0.8.11
+openpyxl==3.0.10
+python-pptx==0.6.21
+olefile==0.47
+PyPDF2==3.0.1
+
+# Windows legacy COM parsing (Windows only)
+pywin32==306; platform_system=="Windows"
+
+# Build
+Cython==0.29.37
+PyInstaller==5.13.2
+
+# Utilities
+pathlib2==2.3.7; python_version<"3.4"

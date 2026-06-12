@@ -1,0 +1,35 @@
+import sys
+import os
+
+# Ensure project root is in path
+root = os.path.dirname(os.path.abspath(__file__))
+if root not in sys.path:
+    sys.path.insert(0, root)
+
+# Also add src to path for PyInstaller bundle
+src_dir = os.path.join(root, 'src')
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
+
+from src.ui.main_window import MainWindow
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    app.setApplicationName("OfficeMetaExtractor")
+    app.setApplicationVersion("1.0.0")
+    
+    app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    
+    window = MainWindow()
+    window.show()
+    
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
