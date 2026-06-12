@@ -1,4 +1,4 @@
-"""Main application window."""
+"""Main application window with modernized card-style UI."""
 import sys
 import os
 from pathlib import Path
@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLabel, QProgressBar, QStatusBar,
     QFileDialog, QMessageBox,
     QMenuBar, QMenu, QAction, QComboBox, QLineEdit,
-    QStackedWidget
+    QStackedWidget, QFrame
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
@@ -18,6 +18,7 @@ from .result_table import ResultTable
 from .audit_result_table import AuditResultTable
 from .audit_detail_dialog import AuditDetailDialog, AuditAlertListDialog
 from .styles import DARK_STYLE
+from .ascii_earth import AsciiEarth
 
 from ..core.extractor_core import MetaExtractor
 from ..parsers import SUPPORTED_EXT
@@ -130,13 +131,13 @@ class AuditWorker(QThread):
 
 
 class MainWindow(QMainWindow):
-    """Main application window."""
+    """Main application window with modern card-style UI."""
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("OfficeMetaExtractor v1.0")
-        self.setMinimumSize(900, 600)
-        self.resize(1000, 700)
+        self.setMinimumSize(960, 640)
+        self.resize(1080, 760)
 
         self.worker = None
         self._current_mode = "audit"
@@ -150,147 +151,210 @@ class MainWindow(QMainWindow):
         logger.add_listener(self._on_log)
 
     def _init_ui(self):
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        layout.setSpacing(8)
-        layout.setContentsMargins(12, 12, 12, 12)
+        # Container holds the earth background and the UI overlay.
+        self._container = QWidget()
+        self.setCentralWidget(self._container)
 
-        top_layout = QHBoxLayout()
-        title_label = QLabel("OfficeMetaExtractor")
-        title_label.setObjectName("title")
-        top_layout.addWidget(title_label)
-        version_label = QLabel("v1.0")
-        version_label.setObjectName("subtitle")
-        top_layout.addWidget(version_label)
-        top_layout.addStretch()
+        self.earth = AsciiEarth(parent=self._container)
+        self.earth.set_alpha(40)
+        self.earth.lower()
 
-        mode_label = QLabel("模式:")
-        top_layout.addWidget(mode_label)
-        self.mode_combo = QComboBox()
-        self.mode_combo.addItem("招标审计", "audit")
-        self.mode_combo.addItem("单文件提取", "single")
-        self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
-        top_layout.addWidget(self.mode_combo)
-        top_layout.addSpacing(20)
+        self._overlay = QWidget(self._container)
+        self._overlay.setObjectName("overlayContainer")
+        self._overlay.setAttribute(Qt.WA_TranslucentBackground, True)
 
-        self.file_count_label = QLabel("0 个文件")
-        self.file_count_label.setObjectName("subtitle")
-        top_layout.addWidget(self.file_count_label)
-        layout.addLayout(top_layout)
+        layout = QVBoxLayout(self._overlay)
+        layout.setSpacing(12)
+        layout.setContentsMargins(16, 16, 16, 16)
 
-        self.project_name_layout = QHBoxLayout()
-        self.project_name_label = QLabel("项目名称:")
-        self.project_name_layout.addWidget(self.project_name_label)
-        self.project_name_input = QLineEdit()
-        self.project_name_input.setPlaceholderText("输入项目名称（用于模板复用检测）")
-        self.project_name_layout.addWidget(self.project_name_input, 1)
-        layout.addLayout(self.project_name_layout)
+        # ===== Header Card =====
+        self._header_card = QFrame()
+        self._header_card.setObjectName("cardContainer")
+        header_layout = QHBoxLayout(self._header_card)
+        header_layout.setContentsMargins(14, 10, 14, 10)
+        header_layout.setSpacing(12)
+
+        self.lbl_title = QLabel("OfficeMetaExtractor")
+        self.lbl_title.setObjectName("title")
+        header_layout.addWidget(self.lbl_title)
+
+        self.lbl_version = QLabel("v1.0")
+        self.lbl_version.setObjectName("subtitle")
+        header_layout.addWidget(self.lbl_version)
+        header_layout.addStretch()
+
+        self.lbl_mode = QLabel("模式:")
+        self.lbl_mode.setObjectName("modeLabel")
+        header_layout.addWidget(self.lbl_mode)
+
+        self.cmb_mode = QComboBox()
+        self.cmb_mode.addItem("招标审计", "audit")
+        self.cmb_mode.addItem("单文件提取", "single")
+        self.cmb_mode.currentIndexChanged.connect(self._on_mode_changed)
+        header_layout.addWidget(self.cmb_mode)
+
+        header_layout.addSpacing(16)
+
+        self.lbl_file_count = QLabel("0 个文件")
+        self.lbl_file_count.setObjectName("fileCount")
+        header_layout.addWidget(self.lbl_file_count)
+
+        layout.addWidget(self._header_card)
+
+        # ===== Project Name Card (audit mode) =====
+        self._project_card = QFrame()
+        self._project_card.setObjectName("cardContainer")
+        project_layout = QHBoxLayout(self._project_card)
+        project_layout.setContentsMargins(14, 10, 14, 10)
+        project_layout.setSpacing(10)
+
+        self.lbl_project_name = QLabel("项目名称:")
+        self.lbl_project_name.setObjectName("modeLabel")
+        project_layout.addWidget(self.lbl_project_name)
+
+        self.edt_project_name = QLineEdit()
+        self.edt_project_name.setPlaceholderText("输入项目名称（用于模板复用检测）")
+        project_layout.addWidget(self.edt_project_name, 1)
+
+        layout.addWidget(self._project_card)
+
+        # ===== Drop Area Card =====
+        self._drop_card = QFrame()
+        self._drop_card.setObjectName("cardContainer")
+        drop_card_layout = QVBoxLayout(self._drop_card)
+        drop_card_layout.setContentsMargins(10, 10, 10, 10)
+        drop_card_layout.setSpacing(0)
 
         self.drop_area = DropArea()
         self.drop_area.files_dropped.connect(self._on_files_dropped)
-        layout.addWidget(self.drop_area)
+        drop_card_layout.addWidget(self.drop_area)
 
-        btn_layout = QHBoxLayout()
+        layout.addWidget(self._drop_card)
+
+        # ===== Action Buttons Card =====
+        self._action_card = QFrame()
+        self._action_card.setObjectName("cardContainer")
+        action_layout = QHBoxLayout(self._action_card)
+        action_layout.setContentsMargins(14, 10, 14, 10)
+        action_layout.setSpacing(10)
+
         self.btn_select_files = QPushButton("选择文件")
         self.btn_select_files.setToolTip("选择单个或多个文件")
         self.btn_select_files.clicked.connect(self._on_select_files)
-        btn_layout.addWidget(self.btn_select_files)
+        action_layout.addWidget(self.btn_select_files)
 
         self.btn_select_folder = QPushButton("选择文件夹")
         self.btn_select_folder.setToolTip("递归扫描文件夹")
         self.btn_select_folder.clicked.connect(self._on_select_folder)
-        btn_layout.addWidget(self.btn_select_folder)
-        btn_layout.addStretch()
+        action_layout.addWidget(self.btn_select_folder)
+        action_layout.addStretch()
 
         self.btn_export_csv = QPushButton("导出 CSV")
         self.btn_export_csv.setObjectName("secondary")
         self.btn_export_csv.clicked.connect(self._on_export_csv)
         self.btn_export_csv.setEnabled(False)
-        btn_layout.addWidget(self.btn_export_csv)
+        action_layout.addWidget(self.btn_export_csv)
 
         self.btn_export_json = QPushButton("导出 JSON")
         self.btn_export_json.setObjectName("secondary")
         self.btn_export_json.clicked.connect(self._on_export_json)
         self.btn_export_json.setEnabled(False)
-        btn_layout.addWidget(self.btn_export_json)
+        action_layout.addWidget(self.btn_export_json)
 
         self.btn_export_excel = QPushButton("导出 Excel")
         self.btn_export_excel.setObjectName("secondary")
         self.btn_export_excel.clicked.connect(self._on_export_excel)
         self.btn_export_excel.setEnabled(False)
-        btn_layout.addWidget(self.btn_export_excel)
+        action_layout.addWidget(self.btn_export_excel)
 
         self.btn_export_audit = QPushButton("导出审计报告")
         self.btn_export_audit.setObjectName("secondary")
         self.btn_export_audit.clicked.connect(self._on_export_audit)
         self.btn_export_audit.setEnabled(False)
-        btn_layout.addWidget(self.btn_export_audit)
+        action_layout.addWidget(self.btn_export_audit)
 
         self.btn_view_alerts = QPushButton("查看发现详情")
         self.btn_view_alerts.setObjectName("secondary")
         self.btn_view_alerts.clicked.connect(self._on_view_alerts)
         self.btn_view_alerts.setEnabled(False)
-        btn_layout.addWidget(self.btn_view_alerts)
+        action_layout.addWidget(self.btn_view_alerts)
 
-        btn_layout.addSpacing(12)
+        action_layout.addSpacing(12)
         self.btn_clear = QPushButton("清空")
         self.btn_clear.setObjectName("danger")
         self.btn_clear.clicked.connect(self._on_clear)
         self.btn_clear.setEnabled(False)
-        btn_layout.addWidget(self.btn_clear)
-        layout.addLayout(btn_layout)
+        action_layout.addWidget(self.btn_clear)
 
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        layout.addWidget(self.progress_bar)
+        layout.addWidget(self._action_card)
 
-        self.status_label = QLabel("就绪")
-        self.status_label.setObjectName("status")
-        layout.addWidget(self.status_label)
+        # ===== Progress & Status Card =====
+        self._status_card = QFrame()
+        self._status_card.setObjectName("cardContainer")
+        status_card_layout = QVBoxLayout(self._status_card)
+        status_card_layout.setContentsMargins(14, 10, 14, 10)
+        status_card_layout.setSpacing(8)
 
-        self.table_stack = QStackedWidget()
-        self.table_single = ResultTable()
-        self.table_single.item_double_clicked.connect(self._on_item_double_clicked)
-        self.table_audit = AuditResultTable()
-        self.table_audit.item_double_clicked.connect(self._on_item_double_clicked)
-        self.table_audit.show_audit_detail.connect(self._on_show_audit_detail)
-        self.table_stack.addWidget(self.table_single)
-        self.table_stack.addWidget(self.table_audit)
-        layout.addWidget(self.table_stack, 1)
+        self.prg_progress = QProgressBar()
+        self.prg_progress.setVisible(False)
+        status_card_layout.addWidget(self.prg_progress)
 
+        self.lbl_status = QLabel("就绪")
+        self.lbl_status.setObjectName("status")
+        status_card_layout.addWidget(self.lbl_status)
+
+        layout.addWidget(self._status_card)
+
+        # ===== Table Card =====
+        self._table_card = QFrame()
+        self._table_card.setObjectName("cardContainer")
+        table_card_layout = QVBoxLayout(self._table_card)
+        table_card_layout.setContentsMargins(10, 10, 10, 10)
+        table_card_layout.setSpacing(0)
+
+        self.tbl_stack = QStackedWidget()
+        self.tbl_single = ResultTable()
+        self.tbl_single.item_double_clicked.connect(self._on_item_double_clicked)
+        self.tbl_audit = AuditResultTable()
+        self.tbl_audit.item_double_clicked.connect(self._on_item_double_clicked)
+        self.tbl_audit.show_audit_detail.connect(self._on_show_audit_detail)
+        self.tbl_stack.addWidget(self.tbl_single)
+        self.tbl_stack.addWidget(self.tbl_audit)
+        table_card_layout.addWidget(self.tbl_stack)
+
+        layout.addWidget(self._table_card, 1)
+
+        # Status bar
         self.status_bar = QStatusBar()
         self.status_bar.showMessage("就绪 | 支持格式: docx, xlsx, pptx, doc, xls, ppt, pdf")
         self.setStatusBar(self.status_bar)
 
-        self.mode_combo.setCurrentIndex(0)
+        self.cmb_mode.setCurrentIndex(0)
         self._apply_mode_ui()
 
     def _on_mode_changed(self, index):
-        mode = self.mode_combo.itemData(index)
+        mode = self.cmb_mode.itemData(index)
         self._current_mode = mode
         self._apply_mode_ui()
         self._on_clear()
 
     def _apply_mode_ui(self):
         if self._current_mode == "audit":
-            self.project_name_label.setVisible(True)
-            self.project_name_input.setVisible(True)
+            self._project_card.setVisible(True)
             self.drop_area.set_hint("拖拽项目文件夹（包含多家公司子文件夹）\n或点击选择文件夹")
             self.btn_select_files.setVisible(False)
             self.btn_select_folder.setVisible(True)
             self.btn_export_audit.setVisible(True)
             self.btn_view_alerts.setVisible(True)
-            self.table_stack.setCurrentWidget(self.table_audit)
+            self.tbl_stack.setCurrentWidget(self.tbl_audit)
         else:
-            self.project_name_label.setVisible(False)
-            self.project_name_input.setVisible(False)
+            self._project_card.setVisible(False)
             self.drop_area.set_hint("拖拽文件到此处\n或点击选择文件 / 文件夹")
             self.btn_select_files.setVisible(True)
             self.btn_select_folder.setVisible(True)
             self.btn_export_audit.setVisible(False)
             self.btn_view_alerts.setVisible(False)
-            self.table_stack.setCurrentWidget(self.table_single)
+            self.tbl_stack.setCurrentWidget(self.tbl_single)
 
     def _init_menubar(self):
         menubar = QMenuBar(self)
@@ -338,9 +402,34 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(clear_action)
 
         help_menu = menubar.addMenu("帮助")
+
+        self._earth_paused = False
+        self._pause_earth_action = QAction("暂停背景动画", self)
+        self._pause_earth_action.setCheckable(True)
+        self._pause_earth_action.triggered.connect(self._on_toggle_earth)
+        help_menu.addAction(self._pause_earth_action)
+        help_menu.addSeparator()
+
         about_action = QAction("关于", self)
         about_action.triggered.connect(self._on_about)
         help_menu.addAction(about_action)
+
+    def _on_toggle_earth(self, checked: bool):
+        """Pause or resume the background earth animation."""
+        self._earth_paused = checked
+        if self.earth:
+            if checked:
+                self.earth.pause()
+            else:
+                self.earth.resume()
+
+    def resizeEvent(self, event):
+        """Keep the earth and overlay covering the whole window."""
+        super().resizeEvent(event)
+        if hasattr(self, "earth") and self.earth:
+            self.earth.setGeometry(self.rect())
+        if hasattr(self, "_overlay") and self._overlay:
+            self._overlay.setGeometry(self.rect())
 
     def _apply_styles(self):
         self.setStyleSheet(DARK_STYLE)
@@ -386,10 +475,10 @@ class MainWindow(QMainWindow):
                     QMessageBox.information(self, "提示", "未找到支持的文件")
 
     def _run_audit(self, folder_path: str):
-        project_name = self.project_name_input.text().strip()
+        project_name = self.edt_project_name.text().strip()
         if not project_name:
             project_name = os.path.basename(folder_path)
-            self.project_name_input.setText(project_name)
+            self.edt_project_name.setText(project_name)
 
         extractor = MetaExtractor()
         files = extractor.scan_directory(folder_path, recursive=True)
@@ -397,8 +486,8 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "提示", "未找到支持的文件")
             return
 
-        self.file_count_label.setText(f"{len(files)} 个文件")
-        self.status_label.setText(f"准备审计 {len(files)} 个文件...")
+        self.lbl_file_count.setText(f"{len(files)} 个文件")
+        self.lbl_status.setText(f"准备审计 {len(files)} 个文件...")
 
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
@@ -409,9 +498,9 @@ class MainWindow(QMainWindow):
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
 
-        self.progress_bar.setMaximum(len(files))
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
+        self.prg_progress.setMaximum(len(files))
+        self.prg_progress.setValue(0)
+        self.prg_progress.setVisible(True)
 
         self.worker = AuditWorker(project_name, folder_path)
         self.worker.progress.connect(self._on_progress)
@@ -439,7 +528,7 @@ class MainWindow(QMainWindow):
             d['risk_level'] = company_risk.get(company, 'low')
             table_data.append(d)
 
-        self.table_audit.set_data(table_data)
+        self.tbl_audit.set_data(table_data)
         self._audit_summary = summary_table
         self._audit_detail = detail_table
 
@@ -461,7 +550,7 @@ class MainWindow(QMainWindow):
         fail_count = len(results) - success_count
         alert_count = len(alerts)
 
-        self.status_label.setText(f"审计完成: {len(results)} 个文件, {alert_count} 条发现")
+        self.lbl_status.setText(f"审计完成: {len(results)} 个文件, {alert_count} 条发现")
         self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败, {alert_count} 条发现")
 
         self.btn_export_csv.setEnabled(True)
@@ -486,8 +575,8 @@ class MainWindow(QMainWindow):
         if not files:
             return
         files = sorted(set(files))
-        self.file_count_label.setText(f"{len(files)} 个文件")
-        self.status_label.setText(f"准备解析 {len(files)} 个文件...")
+        self.lbl_file_count.setText(f"{len(files)} 个文件")
+        self.lbl_status.setText(f"准备解析 {len(files)} 个文件...")
 
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
@@ -498,9 +587,9 @@ class MainWindow(QMainWindow):
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
 
-        self.progress_bar.setMaximum(len(files))
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
+        self.prg_progress.setMaximum(len(files))
+        self.prg_progress.setValue(0)
+        self.prg_progress.setVisible(True)
 
         self.worker = ExtractionWorker(files)
         self.worker.progress.connect(self._on_progress)
@@ -509,13 +598,13 @@ class MainWindow(QMainWindow):
         self.worker.start()
 
     def _on_progress(self, current: int, total: int, filename: str):
-        self.progress_bar.setValue(current)
-        self.status_label.setText(f"[{current}/{total}] 正在解析: {filename}")
+        self.prg_progress.setValue(current)
+        self.lbl_status.setText(f"[{current}/{total}] 正在解析: {filename}")
         self.status_bar.showMessage(f"解析中... {current}/{total} | {filename}")
 
     def _on_results(self, results: List[dict]):
-        self.table_single.set_data(results)
-        self.status_label.setText(f"解析完成: {len(results)} 个文件")
+        self.tbl_single.set_data(results)
+        self.lbl_status.setText(f"解析完成: {len(results)} 个文件")
         success_count = sum(1 for r in results if not str(r.get('status', '')).startswith('失败'))
         fail_count = len(results) - success_count
         self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败")
@@ -524,17 +613,17 @@ class MainWindow(QMainWindow):
         self.btn_export_excel.setEnabled(True)
 
     def _on_finished(self):
-        self.progress_bar.setVisible(False)
+        self.prg_progress.setVisible(False)
         self.btn_clear.setEnabled(True)
         self.btn_select_files.setEnabled(True)
         self.btn_select_folder.setEnabled(True)
         self.worker = None
 
     def _on_clear(self):
-        self.table_single.clear_data()
-        self.table_audit.clear_data()
-        self.file_count_label.setText("0 个文件")
-        self.status_label.setText("就绪")
+        self.tbl_single.clear_data()
+        self.tbl_audit.clear_data()
+        self.lbl_file_count.setText("0 个文件")
+        self.lbl_status.setText("就绪")
         self.status_bar.showMessage("就绪 | 支持格式: docx, xlsx, pptx, doc, xls, ppt, pdf")
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
@@ -548,21 +637,21 @@ class MainWindow(QMainWindow):
     def _on_export_csv(self):
         path, _ = QFileDialog.getSaveFileName(self, "导出 CSV", "metadata.csv", "CSV Files (*.csv)")
         if path:
-            current_table = self.table_audit if self._current_mode == "audit" else self.table_single
+            current_table = self.tbl_audit if self._current_mode == "audit" else self.tbl_single
             if current_table.export_csv(path):
                 QMessageBox.information(self, "成功", f"已导出到:\n{path}")
 
     def _on_export_json(self):
         path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "metadata.json", "JSON Files (*.json)")
         if path:
-            current_table = self.table_audit if self._current_mode == "audit" else self.table_single
+            current_table = self.tbl_audit if self._current_mode == "audit" else self.tbl_single
             if current_table.export_json(path):
                 QMessageBox.information(self, "成功", f"已导出到:\n{path}")
 
     def _on_export_excel(self):
         path, _ = QFileDialog.getSaveFileName(self, "导出 Excel", "metadata.xlsx", "Excel Files (*.xlsx)")
         if path:
-            current_table = self.table_audit if self._current_mode == "audit" else self.table_single
+            current_table = self.tbl_audit if self._current_mode == "audit" else self.tbl_single
             if current_table.export_excel(path):
                 QMessageBox.information(self, "成功", f"已导出到:\n{path}")
 
