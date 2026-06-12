@@ -1,19 +1,69 @@
 """Result table widget for displaying audit-mode metadata."""
 from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
-    QMenu, QAction, QMessageBox, QFileDialog
+    QMenu, QAction, QMessageBox, QFileDialog, QStyledItemDelegate,
+    QStyleOptionViewItem
 )
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtGui import QColor, QFont, QPainter
 import os
 import subprocess
 from typing import List, Dict, Any
+
+from .styles import Theme
+from .audit_detail_dialog import AuditDetailDialog
+
+
+class RiskBadgeDelegate(QStyledItemDelegate):
+    """Delegate that paints risk levels as compact rounded badges."""
+
+    LABELS = {
+        'critical': '严重',
+        'high': '高',
+        'medium': '中',
+        'low': '低',
+    }
+
+    COLORS = {
+        'critical': (Theme.RISK_CRITICAL, QColor(255, 68, 68, 45)),
+        'high':     (Theme.RISK_HIGH,     QColor(255, 136, 0, 45)),
+        'medium':   (Theme.RISK_MEDIUM,   QColor(255, 204, 0, 45)),
+        'low':      (Theme.RISK_LOW,      QColor(94, 207, 94, 45)),
+    }
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        risk = str(index.data(Qt.DisplayRole) or '').lower()
+        text, (fg, bg) = self._style_for(risk)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        rect = option.rect.adjusted(4, 3, -4, -3)
+        radius = 4
+        painter.setBrush(bg)
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(rect, radius, radius)
+
+        painter.setPen(QColor(fg))
+        font = painter.font()
+        font.setBold(True)
+        font.setPointSize(10)
+        painter.setFont(font)
+        painter.drawText(rect, Qt.AlignCenter, text)
+
+        painter.restore()
+
+    def _style_for(self, risk: str) -> tuple:
+        label = self.LABELS.get(risk, risk)
+        colors = self.COLORS.get(risk, (Theme.TEXT_MUTED, QColor(117, 117, 122, 40)))
+        return label, colors
 
 
 class AuditResultTable(QTableWidget):
     """Table displaying audit-mode document metadata extraction results."""
 
     item_double_clicked = pyqtSignal(str)
+    show_audit_detail = pyqtSignal(dict)  # Emits alert dict for detail view
 
     COLUMN_HEADERS = [
         "文件名", "格式", "公司", "作者", "最后编辑者",
@@ -38,6 +88,9 @@ class AuditResultTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.setSortingEnabled(True)
 
+        # Risk badge delegate
+        self.setItemDelegateForColumn(8, RiskBadgeDelegate(self))
+
         # Column sizing
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -45,7 +98,7 @@ class AuditResultTable(QTableWidget):
         self.setColumnWidth(1, 50)
         header.setSectionResizeMode(2, QHeaderView.Interactive)  # 公司
         header.setSectionResizeMode(8, QHeaderView.Fixed)        # 风险等级
-        self.setColumnWidth(8, 70)
+        self.setColumnWidth(8, 58)
         for i in range(3, 8):
             header.setSectionResizeMode(i, QHeaderView.Interactive)
         header.setSectionResizeMode(9, QHeaderView.Interactive)
@@ -72,30 +125,21 @@ class AuditResultTable(QTableWidget):
                 cell.setData(Qt.UserRole, item.get('filepath', ''))
 
                 if not success:
-                    cell.setForeground(QColor("#f48771"))
-
-                # Color risk level column
-                if key == 'risk_level':
-                    risk = str(val).lower()
-                    if risk == 'critical':
-                        cell.setForeground(QColor("#ff0000"))
-                        cell.setFont(QFont("", -1, QFont.Bold))
-                    elif risk == 'high':
-                        cell.setForeground(QColor("#ff6600"))
-                    elif risk == 'medium':
-                        cell.setForeground(QColor("#ffcc00"))
-                    elif risk == 'low':
-                        cell.setForeground(QColor("#66cc66"))
+                    cell.setForeground(QColor(Theme.ERROR))
 
                 self.setItem(row_idx, col_idx, cell)
 
             # Set row height
-            self.setRowHeight(row_idx, 24)
+            self.setRowHeight(row_idx, 28)
 
         self.setSortingEnabled(True)
         self.resizeColumnsToContents()
         # Reset first column to stretch after resize
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Ensure format column stays compact
+        self.setColumnWidth(1, max(50, self.columnWidth(1)))
+        # Keep risk column narrow enough for badge
+        self.setColumnWidth(8, max(58, min(70, self.columnWidth(8))))
 
     def get_data(self) -> List[Dict[str, Any]]:
         """Return current data."""
@@ -132,7 +176,31 @@ class AuditResultTable(QTableWidget):
         open_loc_action.triggered.connect(self._open_file_location)
         menu.addAction(open_loc_action)
 
+        menu.addSeparator()
+
+        view_detail_action = QAction("查看审计详情", self)
+        view_detail_action.triggered.connect(self._on_view_detail)
+        menu.addAction(view_detail_action)
+
         menu.exec_(self.viewport().mapToGlobal(position))
+
+    def _on_view_detail(self):
+        """Emit signal to show audit detail for selected row(s)."""
+        selected = self.selected_rows_data()
+        if not selected:
+            return
+        # Emit the first selected row's data as a simple alert dict
+        # The main window will map this to actual alerts
+        row_data = selected[0]
+        alert = {
+            'rule_name': 'file_audit_summary',
+            'severity': row_data.get('risk_level', 'low'),
+            'description': f"文件: {row_data.get('filename', '')}\n公司: {row_data.get('company', '')}\n作者: {row_data.get('author', '')}\n最后编辑者: {row_data.get('last_modified_by', '')}",
+            'affected_companies': [row_data.get('company', '')] if row_data.get('company') else [],
+            'affected_files': [row_data.get('filepath', '')] if row_data.get('filepath') else [],
+            'details': row_data,
+        }
+        self.show_audit_detail.emit(alert)
 
     def _copy_cell(self):
         item = self.currentItem()
@@ -214,8 +282,8 @@ class AuditResultTable(QTableWidget):
             ws.title = "Metadata"
 
             # Header
-            header_font = Font(bold=True, color="FFFFFF")
-            header_fill = PatternFill(start_color="0E639C", end_color="0E639C", fill_type="solid")
+            header_font = Font(bold=True, color=Theme.EXCEL_HEADER_FONT)
+            header_fill = PatternFill(start_color=Theme.EXCEL_HEADER_FILL, end_color=Theme.EXCEL_HEADER_FILL, fill_type="solid")
             header_align = Alignment(horizontal="center", vertical="center")
 
             for col_idx, header in enumerate(self.COLUMN_HEADERS, 1):

@@ -9,6 +9,8 @@ import os
 import subprocess
 from typing import List, Dict, Any
 
+from .styles import Theme
+
 
 class ResultTable(QTableWidget):
     """Table displaying document metadata extraction results."""
@@ -68,17 +70,19 @@ class ResultTable(QTableWidget):
                 cell.setData(Qt.UserRole, item.get('filepath', ''))
                 
                 if not success:
-                    cell.setForeground(QColor("#f48771"))
+                    cell.setForeground(QColor(Theme.ERROR))
                 
                 self.setItem(row_idx, col_idx, cell)
             
             # Set row height
-            self.setRowHeight(row_idx, 24)
-        
+            self.setRowHeight(row_idx, 28)
+
         self.setSortingEnabled(True)
         self.resizeColumnsToContents()
         # Reset first column to stretch after resize
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Ensure format column stays compact
+        self.setColumnWidth(1, max(50, self.columnWidth(1)))
     
     def get_data(self) -> List[Dict[str, Any]]:
         """Return current data."""
@@ -197,8 +201,8 @@ class ResultTable(QTableWidget):
             ws.title = "Metadata"
             
             # Header
-            header_font = Font(bold=True, color="FFFFFF")
-            header_fill = PatternFill(start_color="0E639C", end_color="0E639C", fill_type="solid")
+            header_font = Font(bold=True, color=Theme.EXCEL_HEADER_FONT)
+            header_fill = PatternFill(start_color=Theme.EXCEL_HEADER_FILL, end_color=Theme.EXCEL_HEADER_FILL, fill_type="solid")
             header_align = Alignment(horizontal="center", vertical="center")
             
             for col_idx, header in enumerate(self.COLUMN_HEADERS, 1):
@@ -214,8 +218,8 @@ class ResultTable(QTableWidget):
                     if val is None:
                         val = ''
                     cell = ws.cell(row=row_idx, column=col_idx, value=str(val))
-                    if not str(item.get('status', '')).startswith('失败'):
-                        cell.font = Font(color="F48771")
+                    if str(item.get('status', '')).startswith('失败'):
+                        cell.font = Font(color=Theme.EXCEL_ERROR_FONT)
             
             # Auto column widths
             for col in ws.columns:

@@ -17,14 +17,15 @@ from PyQt5.QtCore import Qt
 
 
 def main():
+    # High-DPI attributes must be set before QApplication is created
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     app.setApplicationName("OfficeMetaExtractor")
     app.setApplicationVersion("1.0.0")
-    
-    app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-    
+
     window = MainWindow()
     window.show()
     
