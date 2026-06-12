@@ -44,6 +44,21 @@ def build():
         "--hidden-import=PyPDF2",
         "--hidden-import=win32com.client",
         "--hidden-import=win32com.gen_py",
+        "--hidden-import=src.parsers.csv_parser",
+        "--hidden-import=src.parsers.base_parser",
+        "--hidden-import=src.parsers.docx_parser",
+        "--hidden-import=src.parsers.xlsx_parser",
+        "--hidden-import=src.parsers.pptx_parser",
+        "--hidden-import=src.parsers.ole_parser",
+        "--hidden-import=src.parsers.pdf_parser",
+        "--hidden-import=src.utils.datamodel",
+        "--hidden-import=src.utils.logger",
+        "--hidden-import=src.utils.config",
+        "--hidden-import=src.audit",
+        "--hidden-import=src.audit.company_extractor",
+        "--hidden-import=src.audit.detector",
+        "--hidden-import=src.audit.risk_scorer",
+        "--hidden-import=src.audit.report_generator",
         str(PROJECT_ROOT / "main.py")
     ]
     

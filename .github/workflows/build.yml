@@ -31,9 +31,12 @@ jobs:
           pip install -r requirements.txt
           pip install PyInstaller
 
+      - name: Build Cython extension
+        run: python build/build_pyd.py
+
       - name: Build EXE with PyInstaller
         run: |
-          pyinstaller --name=OfficeMetaExtractor --onefile --windowed --noconfirm --clean --distpath=dist --workpath=build/pyinstaller --specpath=build/pyinstaller --paths=src --collect-all src --collect-all docx --collect-all openpyxl --collect-all pptx --collect-all olefile --collect-all PyPDF2 --hidden-import=PyQt5.sip --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets main.py
+          pyinstaller --name=OfficeMetaExtractor --onefile --windowed --noconfirm --clean --distpath=dist --workpath=build/pyinstaller --specpath=build/pyinstaller --paths=src --collect-all src --collect-all docx --collect-all openpyxl --collect-all pptx --collect-all olefile --collect-all PyPDF2 --hidden-import=PyQt5.sip --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=src.audit --hidden-import=src.audit.company_extractor --hidden-import=src.audit.detector --hidden-import=src.audit.risk_scorer --hidden-import=src.audit.report_generator --hidden-import=src.parsers.csv_parser --hidden-import=src.parsers.base_parser --hidden-import=src.parsers.docx_parser --hidden-import=src.parsers.xlsx_parser --hidden-import=src.parsers.pptx_parser --hidden-import=src.parsers.ole_parser --hidden-import=src.parsers.pdf_parser --hidden-import=src.utils.datamodel --hidden-import=src.utils.logger --hidden-import=src.utils.config main.py
 
       - name: Download and install Inno Setup
         run: |
