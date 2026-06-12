@@ -1,22 +1,22 @@
 """Main application window."""
 import sys
 import os
-import signal
 from pathlib import Path
 from typing import List
 
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QProgressBar, QStatusBar,
-    QFileDialog, QMessageBox, QSplitter, QFrame,
+    QFileDialog, QMessageBox,
     QMenuBar, QMenu, QAction, QComboBox, QLineEdit,
     QStackedWidget
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from .drop_area import DropArea
 from .result_table import ResultTable
 from .audit_result_table import AuditResultTable
+from .audit_detail_dialog import AuditDetailDialog, AuditAlertListDialog
 from .styles import DARK_STYLE
 
 from ..core.extractor_core import MetaExtractor
@@ -27,55 +27,50 @@ from ..audit import export_to_excel as audit_export_to_excel
 
 class ExtractionWorker(QThread):
     """Background worker for batch extraction with per-file timeout."""
-    
+
     progress = pyqtSignal(int, int, str)
     result = pyqtSignal(list)
     finished_signal = pyqtSignal()
-    
-    # 单文件超时时间（秒）
+
     FILE_TIMEOUT = 30
-    
+
     def __init__(self, filepaths: List[str]):
         super().__init__()
         self.filepaths = filepaths
         self._stop = False
-    
+
     def _extract_with_timeout(self, extractor, filepath: str) -> dict:
-        """Extract metadata with timeout using threading.Timer."""
         import threading
-        import time
-        
         result = [None]
         exception = [None]
-        
+
         def target():
             try:
                 result[0] = extractor.extract(filepath)
             except Exception as e:
                 exception[0] = e
-        
+
         thread = threading.Thread(target=target)
         thread.daemon = True
         thread.start()
         thread.join(timeout=self.FILE_TIMEOUT)
-        
+
         if thread.is_alive():
             raise TimeoutError(f"文件解析超过 {self.FILE_TIMEOUT} 秒")
-        
+
         if exception[0] is not None:
             raise exception[0]
-        
+
         return result[0]
-    
+
     def run(self):
         extractor = MetaExtractor()
         results = []
         total = len(self.filepaths)
-        
+
         for i, fp in enumerate(self.filepaths):
             if self._stop:
                 break
-            
             self.progress.emit(i + 1, total, Path(fp).name)
             try:
                 result = self._extract_with_timeout(extractor, fp)
@@ -96,10 +91,10 @@ class ExtractionWorker(QThread):
                     'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
                     'status': f'失败: {str(e)}'
                 })
-        
+
         self.result.emit(results)
         self.finished_signal.emit()
-    
+
     def stop(self):
         self._stop = True
 
@@ -111,9 +106,6 @@ class AuditWorker(QThread):
     result = pyqtSignal(dict)
     finished_signal = pyqtSignal()
 
-    # 单文件超时时间（秒）
-    FILE_TIMEOUT = 30
-
     def __init__(self, project_name: str, folder_path: str):
         super().__init__()
         self.project_name = project_name
@@ -122,9 +114,6 @@ class AuditWorker(QThread):
 
     def run(self):
         extractor = MetaExtractor()
-        # scan_directory returns paths; we emit progress manually
-        import os
-        from pathlib import Path
         files = extractor.scan_directory(self.folder_path, recursive=True)
         total = len(files)
         for i, fp in enumerate(files):
@@ -150,9 +139,10 @@ class MainWindow(QMainWindow):
         self.resize(1000, 700)
 
         self.worker = None
-        self._current_mode = "audit"  # 'single' or 'audit'
+        self._current_mode = "audit"
         self._audit_summary = []
         self._audit_detail = []
+        self._audit_alerts = []
         self._init_ui()
         self._apply_styles()
         self._init_menubar()
@@ -166,38 +156,29 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
         layout.setContentsMargins(12, 12, 12, 12)
 
-        # Top area
         top_layout = QHBoxLayout()
-
         title_label = QLabel("OfficeMetaExtractor")
         title_label.setObjectName("title")
         top_layout.addWidget(title_label)
-
         version_label = QLabel("v1.0")
         version_label.setObjectName("subtitle")
         top_layout.addWidget(version_label)
-
         top_layout.addStretch()
 
-        # Mode selector
         mode_label = QLabel("模式:")
         top_layout.addWidget(mode_label)
-
         self.mode_combo = QComboBox()
         self.mode_combo.addItem("招标审计", "audit")
         self.mode_combo.addItem("单文件提取", "single")
         self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
         top_layout.addWidget(self.mode_combo)
-
         top_layout.addSpacing(20)
 
         self.file_count_label = QLabel("0 个文件")
         self.file_count_label.setObjectName("subtitle")
         top_layout.addWidget(self.file_count_label)
-
         layout.addLayout(top_layout)
 
-        # Project name input (audit mode only)
         self.project_name_layout = QHBoxLayout()
         self.project_name_label = QLabel("项目名称:")
         self.project_name_layout.addWidget(self.project_name_label)
@@ -206,14 +187,11 @@ class MainWindow(QMainWindow):
         self.project_name_layout.addWidget(self.project_name_input, 1)
         layout.addLayout(self.project_name_layout)
 
-        # Drop area
         self.drop_area = DropArea()
         self.drop_area.files_dropped.connect(self._on_files_dropped)
         layout.addWidget(self.drop_area)
 
-        # Buttons
         btn_layout = QHBoxLayout()
-
         self.btn_select_files = QPushButton("选择文件")
         self.btn_select_files.setToolTip("选择单个或多个文件")
         self.btn_select_files.clicked.connect(self._on_select_files)
@@ -223,7 +201,6 @@ class MainWindow(QMainWindow):
         self.btn_select_folder.setToolTip("递归扫描文件夹")
         self.btn_select_folder.clicked.connect(self._on_select_folder)
         btn_layout.addWidget(self.btn_select_folder)
-
         btn_layout.addStretch()
 
         self.btn_export_csv = QPushButton("导出 CSV")
@@ -244,50 +221,48 @@ class MainWindow(QMainWindow):
         self.btn_export_excel.setEnabled(False)
         btn_layout.addWidget(self.btn_export_excel)
 
-        # Audit report export button (audit mode only)
         self.btn_export_audit = QPushButton("导出审计报告")
         self.btn_export_audit.setObjectName("secondary")
         self.btn_export_audit.clicked.connect(self._on_export_audit)
         self.btn_export_audit.setEnabled(False)
-        self.btn_export_audit.setVisible(True)
         btn_layout.addWidget(self.btn_export_audit)
 
-        btn_layout.addSpacing(12)
+        self.btn_view_alerts = QPushButton("查看发现详情")
+        self.btn_view_alerts.setObjectName("secondary")
+        self.btn_view_alerts.clicked.connect(self._on_view_alerts)
+        self.btn_view_alerts.setEnabled(False)
+        btn_layout.addWidget(self.btn_view_alerts)
 
+        btn_layout.addSpacing(12)
         self.btn_clear = QPushButton("清空")
         self.btn_clear.setObjectName("danger")
         self.btn_clear.clicked.connect(self._on_clear)
         self.btn_clear.setEnabled(False)
         btn_layout.addWidget(self.btn_clear)
-
         layout.addLayout(btn_layout)
 
-        # Progress bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         layout.addWidget(self.progress_bar)
 
-        # Status label
         self.status_label = QLabel("就绪")
         self.status_label.setObjectName("status")
         layout.addWidget(self.status_label)
 
-        # Result tables (stacked)
         self.table_stack = QStackedWidget()
         self.table_single = ResultTable()
         self.table_single.item_double_clicked.connect(self._on_item_double_clicked)
         self.table_audit = AuditResultTable()
         self.table_audit.item_double_clicked.connect(self._on_item_double_clicked)
+        self.table_audit.show_audit_detail.connect(self._on_show_audit_detail)
         self.table_stack.addWidget(self.table_single)
         self.table_stack.addWidget(self.table_audit)
         layout.addWidget(self.table_stack, 1)
 
-        # Status bar
         self.status_bar = QStatusBar()
         self.status_bar.showMessage("就绪 | 支持格式: docx, xlsx, pptx, doc, xls, ppt, pdf")
         self.setStatusBar(self.status_bar)
 
-        # Set default mode to audit
         self.mode_combo.setCurrentIndex(0)
         self._apply_mode_ui()
 
@@ -299,28 +274,22 @@ class MainWindow(QMainWindow):
 
     def _apply_mode_ui(self):
         if self._current_mode == "audit":
-            # Show project name, audit table, audit-specific buttons
             self.project_name_label.setVisible(True)
             self.project_name_input.setVisible(True)
             self.drop_area.set_hint("拖拽项目文件夹（包含多家公司子文件夹）\n或点击选择文件夹")
             self.btn_select_files.setVisible(False)
             self.btn_select_folder.setVisible(True)
-            self.btn_export_csv.setVisible(True)
-            self.btn_export_json.setVisible(True)
-            self.btn_export_excel.setVisible(True)
             self.btn_export_audit.setVisible(True)
+            self.btn_view_alerts.setVisible(True)
             self.table_stack.setCurrentWidget(self.table_audit)
         else:
-            # Single file mode
             self.project_name_label.setVisible(False)
             self.project_name_input.setVisible(False)
             self.drop_area.set_hint("拖拽文件到此处\n或点击选择文件 / 文件夹")
             self.btn_select_files.setVisible(True)
             self.btn_select_folder.setVisible(True)
-            self.btn_export_csv.setVisible(True)
-            self.btn_export_json.setVisible(True)
-            self.btn_export_excel.setVisible(True)
             self.btn_export_audit.setVisible(False)
+            self.btn_view_alerts.setVisible(False)
             self.table_stack.setCurrentWidget(self.table_single)
 
     def _init_menubar(self):
@@ -328,7 +297,6 @@ class MainWindow(QMainWindow):
         self.setMenuBar(menubar)
 
         file_menu = menubar.addMenu("文件")
-
         open_files_action = QAction("选择文件...", self)
         open_files_action.setShortcut("Ctrl+O")
         open_files_action.triggered.connect(self._on_select_files)
@@ -338,11 +306,9 @@ class MainWindow(QMainWindow):
         open_folder_action.setShortcut("Ctrl+Shift+O")
         open_folder_action.triggered.connect(self._on_select_folder)
         file_menu.addAction(open_folder_action)
-
         file_menu.addSeparator()
 
         export_menu = file_menu.addMenu("导出")
-
         export_csv_action = QAction("导出 CSV", self)
         export_csv_action.triggered.connect(self._on_export_csv)
         export_menu.addAction(export_csv_action)
@@ -358,7 +324,6 @@ class MainWindow(QMainWindow):
         export_audit_action = QAction("导出审计报告", self)
         export_audit_action.triggered.connect(self._on_export_audit)
         export_menu.addAction(export_audit_action)
-
         file_menu.addSeparator()
 
         exit_action = QAction("退出", self)
@@ -382,16 +347,13 @@ class MainWindow(QMainWindow):
 
     def _on_files_dropped(self, paths: List[str]):
         if self._current_mode == "audit":
-            # In audit mode, accept directories
             dirs = [p for p in paths if os.path.isdir(p)]
             if dirs:
                 self._run_audit(dirs[0])
             else:
-                # If files dropped, use their parent directory
                 files = [p for p in paths if os.path.isfile(p)]
                 if files:
-                    parent_dir = os.path.dirname(files[0])
-                    self._run_audit(parent_dir)
+                    self._run_audit(os.path.dirname(files[0]))
         else:
             files = self._collect_files(paths)
             if files:
@@ -399,14 +361,11 @@ class MainWindow(QMainWindow):
 
     def _on_select_files(self):
         if self._current_mode == "audit":
-            return  # Not available in audit mode
+            return
         files, _ = QFileDialog.getOpenFileNames(
-            self,
-            "选择文件",
-            "",
+            self, "选择文件", "",
             "Office Documents (*.docx *.xlsx *.pptx *.doc *.xls *.ppt);;"
-            "PDF Files (*.pdf);;"
-            "All Files (*.*)"
+            "PDF Files (*.pdf);;All Files (*.*)"
         )
         if files:
             self._process_files(files)
@@ -445,6 +404,7 @@ class MainWindow(QMainWindow):
         self.btn_export_json.setEnabled(False)
         self.btn_export_excel.setEnabled(False)
         self.btn_export_audit.setEnabled(False)
+        self.btn_view_alerts.setEnabled(False)
         self.btn_clear.setEnabled(False)
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
@@ -465,7 +425,6 @@ class MainWindow(QMainWindow):
         summary_table = audit_result.get('summary_table', [])
         detail_table = audit_result.get('detail_table', [])
 
-        # Build a company -> risk_level mapping from summary table
         company_risk = {}
         for row in summary_table:
             company = row.get('公司名称', '')
@@ -473,7 +432,6 @@ class MainWindow(QMainWindow):
             if company:
                 company_risk[company] = risk
 
-        # Convert DocumentMeta objects to dicts for the table, adding risk_level
         table_data = []
         for meta in results:
             d = meta.to_dict()
@@ -485,21 +443,34 @@ class MainWindow(QMainWindow):
         self._audit_summary = summary_table
         self._audit_detail = detail_table
 
+        self._audit_alerts = []
+        for alert in alerts:
+            if hasattr(alert, 'rule_name'):
+                self._audit_alerts.append({
+                    'rule_name': alert.rule_name,
+                    'severity': alert.severity,
+                    'description': alert.description,
+                    'affected_companies': alert.affected_companies,
+                    'affected_files': alert.affected_files,
+                    'details': alert.details,
+                })
+            elif isinstance(alert, dict):
+                self._audit_alerts.append(alert)
+
         success_count = sum(1 for r in results if r.parse_success)
         fail_count = len(results) - success_count
         alert_count = len(alerts)
 
         self.status_label.setText(f"审计完成: {len(results)} 个文件, {alert_count} 条发现")
-        msg = f"完成: {success_count} 成功, {fail_count} 失败, {alert_count} 条发现"
-        self.status_bar.showMessage(msg)
+        self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败, {alert_count} 条发现")
 
         self.btn_export_csv.setEnabled(True)
         self.btn_export_json.setEnabled(True)
         self.btn_export_excel.setEnabled(True)
         self.btn_export_audit.setEnabled(True)
+        self.btn_view_alerts.setEnabled(True)
 
     def _collect_files(self, paths: List[str]) -> List[str]:
-        """Collect files from paths (files or directories)."""
         files = []
         for p in paths:
             p_path = Path(p)
@@ -514,25 +485,23 @@ class MainWindow(QMainWindow):
     def _process_files(self, files: List[str]):
         if not files:
             return
-        
-        # Deduplicate and sort
         files = sorted(set(files))
-        
         self.file_count_label.setText(f"{len(files)} 个文件")
         self.status_label.setText(f"准备解析 {len(files)} 个文件...")
-        
+
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
         self.btn_export_excel.setEnabled(False)
         self.btn_export_audit.setEnabled(False)
+        self.btn_view_alerts.setEnabled(False)
         self.btn_clear.setEnabled(False)
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
-        
+
         self.progress_bar.setMaximum(len(files))
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
-        
+
         self.worker = ExtractionWorker(files)
         self.worker.progress.connect(self._on_progress)
         self.worker.result.connect(self._on_results)
@@ -547,13 +516,9 @@ class MainWindow(QMainWindow):
     def _on_results(self, results: List[dict]):
         self.table_single.set_data(results)
         self.status_label.setText(f"解析完成: {len(results)} 个文件")
-        
         success_count = sum(1 for r in results if not str(r.get('status', '')).startswith('失败'))
         fail_count = len(results) - success_count
-        
-        msg = f"完成: {success_count} 成功, {fail_count} 失败"
-        self.status_bar.showMessage(msg)
-        
+        self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败")
         self.btn_export_csv.setEnabled(True)
         self.btn_export_json.setEnabled(True)
         self.btn_export_excel.setEnabled(True)
@@ -575,31 +540,27 @@ class MainWindow(QMainWindow):
         self.btn_export_json.setEnabled(False)
         self.btn_export_excel.setEnabled(False)
         self.btn_export_audit.setEnabled(False)
+        self.btn_view_alerts.setEnabled(False)
         self._audit_summary = []
         self._audit_detail = []
+        self._audit_alerts = []
 
     def _on_export_csv(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "导出 CSV", "metadata.csv", "CSV Files (*.csv)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, "导出 CSV", "metadata.csv", "CSV Files (*.csv)")
         if path:
             current_table = self.table_audit if self._current_mode == "audit" else self.table_single
             if current_table.export_csv(path):
                 QMessageBox.information(self, "成功", f"已导出到:\n{path}")
 
     def _on_export_json(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "导出 JSON", "metadata.json", "JSON Files (*.json)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "metadata.json", "JSON Files (*.json)")
         if path:
             current_table = self.table_audit if self._current_mode == "audit" else self.table_single
             if current_table.export_json(path):
                 QMessageBox.information(self, "成功", f"已导出到:\n{path}")
 
     def _on_export_excel(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "导出 Excel", "metadata.xlsx", "Excel Files (*.xlsx)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, "导出 Excel", "metadata.xlsx", "Excel Files (*.xlsx)")
         if path:
             current_table = self.table_audit if self._current_mode == "audit" else self.table_single
             if current_table.export_excel(path):
@@ -609,15 +570,24 @@ class MainWindow(QMainWindow):
         if not self._audit_summary and not self._audit_detail:
             QMessageBox.information(self, "提示", "没有审计结果可导出")
             return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "导出审计报告", "audit_report.xlsx", "Excel Files (*.xlsx)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, "导出审计报告", "audit_report.xlsx", "Excel Files (*.xlsx)")
         if path:
             if audit_export_to_excel(self._audit_summary, self._audit_detail, path):
                 QMessageBox.information(self, "成功", f"审计报告已导出到:\n{path}")
 
+    def _on_show_audit_detail(self, alert: dict):
+        dialog = AuditDetailDialog(alert, parent=self)
+        dialog.mark_handled.connect(lambda name: logger.info(f"Alert marked handled: {name}"))
+        dialog.exec_()
+
+    def _on_view_alerts(self):
+        if not self._audit_alerts:
+            QMessageBox.information(self, "提示", "当前没有审计发现")
+            return
+        dialog = AuditAlertListDialog(self._audit_alerts, parent=self)
+        dialog.exec_()
+
     def _on_item_double_clicked(self, filepath: str):
-        """Open file with default application."""
         if os.path.exists(filepath):
             if sys.platform == 'win32':
                 os.startfile(filepath)
