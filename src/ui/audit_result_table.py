@@ -9,11 +9,15 @@ import os
 import subprocess
 from typing import List, Dict, Any
 
+from .styles import Theme
+from .audit_detail_dialog import AuditDetailDialog
+
 
 class AuditResultTable(QTableWidget):
     """Table displaying audit-mode document metadata extraction results."""
 
     item_double_clicked = pyqtSignal(str)
+    show_audit_detail = pyqtSignal(dict)  # Emits alert dict for detail view
 
     COLUMN_HEADERS = [
         "文件名", "格式", "公司", "作者", "最后编辑者",
@@ -72,20 +76,20 @@ class AuditResultTable(QTableWidget):
                 cell.setData(Qt.UserRole, item.get('filepath', ''))
 
                 if not success:
-                    cell.setForeground(QColor("#f48771"))
+                    cell.setForeground(QColor(Theme.ERROR))
 
                 # Color risk level column
                 if key == 'risk_level':
                     risk = str(val).lower()
                     if risk == 'critical':
-                        cell.setForeground(QColor("#ff0000"))
+                        cell.setForeground(QColor(Theme.RISK_CRITICAL))
                         cell.setFont(QFont("", -1, QFont.Bold))
                     elif risk == 'high':
-                        cell.setForeground(QColor("#ff6600"))
+                        cell.setForeground(QColor(Theme.RISK_HIGH))
                     elif risk == 'medium':
-                        cell.setForeground(QColor("#ffcc00"))
+                        cell.setForeground(QColor(Theme.RISK_MEDIUM))
                     elif risk == 'low':
-                        cell.setForeground(QColor("#66cc66"))
+                        cell.setForeground(QColor(Theme.RISK_LOW))
 
                 self.setItem(row_idx, col_idx, cell)
 
@@ -132,7 +136,31 @@ class AuditResultTable(QTableWidget):
         open_loc_action.triggered.connect(self._open_file_location)
         menu.addAction(open_loc_action)
 
+        menu.addSeparator()
+
+        view_detail_action = QAction("查看审计详情", self)
+        view_detail_action.triggered.connect(self._on_view_detail)
+        menu.addAction(view_detail_action)
+
         menu.exec_(self.viewport().mapToGlobal(position))
+
+    def _on_view_detail(self):
+        """Emit signal to show audit detail for selected row(s)."""
+        selected = self.selected_rows_data()
+        if not selected:
+            return
+        # Emit the first selected row's data as a simple alert dict
+        # The main window will map this to actual alerts
+        row_data = selected[0]
+        alert = {
+            'rule_name': 'file_audit_summary',
+            'severity': row_data.get('risk_level', 'low'),
+            'description': f"文件: {row_data.get('filename', '')}\n公司: {row_data.get('company', '')}\n作者: {row_data.get('author', '')}\n最后编辑者: {row_data.get('last_modified_by', '')}",
+            'affected_companies': [row_data.get('company', '')] if row_data.get('company') else [],
+            'affected_files': [row_data.get('filepath', '')] if row_data.get('filepath') else [],
+            'details': row_data,
+        }
+        self.show_audit_detail.emit(alert)
 
     def _copy_cell(self):
         item = self.currentItem()
@@ -214,8 +242,8 @@ class AuditResultTable(QTableWidget):
             ws.title = "Metadata"
 
             # Header
-            header_font = Font(bold=True, color="FFFFFF")
-            header_fill = PatternFill(start_color="0E639C", end_color="0E639C", fill_type="solid")
+            header_font = Font(bold=True, color=Theme.EXCEL_HEADER_FONT)
+            header_fill = PatternFill(start_color=Theme.EXCEL_HEADER_FILL, end_color=Theme.EXCEL_HEADER_FILL, fill_type="solid")
             header_align = Alignment(horizontal="center", vertical="center")
 
             for col_idx, header in enumerate(self.COLUMN_HEADERS, 1):

@@ -19,8 +19,8 @@ class DropArea(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setAlignment(Qt.AlignCenter)
         
-        self.icon_label = QLabel("📄")
-        self.icon_label.setStyleSheet("font-size: 48px; color: #5a5a5a;")
+        self.icon_label = QLabel("◈")
+        self.icon_label.setObjectName("dropIcon")
         self.icon_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.icon_label)
         
