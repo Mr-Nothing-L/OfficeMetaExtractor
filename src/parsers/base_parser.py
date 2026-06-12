@@ -11,7 +11,28 @@ class BaseParser(ABC):
     
     @classmethod
     def can_parse(cls, filepath: Path) -> bool:
-        return filepath.suffix.lower() in cls.SUPPORTED_EXTENSIONS
+        if filepath.suffix.lower() not in cls.SUPPORTED_EXTENSIONS:
+            return False
+        # 验证文件头（magic number）
+        return cls._validate_header(filepath)
+    
+    @classmethod
+    def _validate_header(cls, filepath: Path) -> bool:
+        """Validate file header (magic number). Override in subclasses."""
+        return True  # 默认不验证，由子类实现
+    
+    @classmethod
+    def _check_header(cls, filepath: Path, expected_headers: list) -> bool:
+        """Check if file starts with expected header bytes."""
+        try:
+            with open(filepath, 'rb') as f:
+                header = f.read(8)
+                for expected in expected_headers:
+                    if header.startswith(expected):
+                        return True
+            return False
+        except Exception:
+            return False
     
     @abstractmethod
     def parse(self, filepath: Path) -> DocumentMeta:

@@ -1,5 +1,8 @@
-"""PPTX parser using python-pptx."""
+"""PPTX parser implementation."""
 from pathlib import Path
+
+from pptx import Presentation
+
 from .base_parser import BaseParser
 from ..utils.datamodel import DocumentMeta
 
@@ -7,34 +10,43 @@ from ..utils.datamodel import DocumentMeta
 class PptxParser(BaseParser):
     SUPPORTED_EXTENSIONS = ['.pptx']
     
+    # PPTX 文件头: PK (zip格式)
+    HEADER = [b'PK\x03\x04', b'PK\x05\x06']
+    
+    @classmethod
+    def _validate_header(cls, filepath: Path) -> bool:
+        return cls._check_header(filepath, cls.HEADER)
+    
     def parse(self, filepath: Path) -> DocumentMeta:
         meta = self._make_meta(filepath, 'PPTX')
         
         try:
-            from pptx import Presentation
             prs = Presentation(filepath)
             cp = prs.core_properties
             
             meta.author = self._safe_str(cp.author)
             meta.last_modified_by = self._safe_str(cp.last_modified_by)
-            meta.created = cp.created
-            meta.modified = cp.modified
             meta.title = self._safe_str(cp.title)
             meta.subject = self._safe_str(cp.subject)
             meta.keywords = self._safe_str(cp.keywords)
             meta.comments = self._safe_str(cp.comments)
             meta.revision = self._safe_str(cp.revision)
+            meta.total_editing_time = cp.total_editing_time
             
-            meta.raw_props = {
-                'category': self._safe_str(cp.category),
-                'content_status': self._safe_str(cp.content_status),
-                'identifier': self._safe_str(cp.identifier),
-                'language': self._safe_str(cp.language),
-                'version': self._safe_str(cp.version),
-            }
+            if cp.created:
+                meta.created = cp.created
+            if cp.modified:
+                meta.modified = cp.modified
+            
+            try:
+                meta.template = self._safe_str(cp.template)
+            except Exception:
+                pass
+            
+            meta.parse_success = True
             
         except Exception as e:
             meta.parse_success = False
-            meta.error_message = str(e)
+            meta.error_message = f"PPTX解析失败: {str(e)}"
         
         return meta

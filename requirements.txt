@@ -6,7 +6,7 @@ PyQt5==5.15.10
 python-docx==0.8.11
 openpyxl==3.0.10
 python-pptx==0.6.21
-olefile==0.47
+olefile>=0.47
 PyPDF2==3.0.1
 
 # Windows legacy COM parsing (Windows only)
@@ -17,4 +17,5 @@ Cython==0.29.37
 PyInstaller==5.13.2
 
 # Utilities
+pandas>=1.5.0
 pathlib2==2.3.7; python_version<"3.4"

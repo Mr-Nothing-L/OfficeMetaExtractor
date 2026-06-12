@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Type, Optional
 
 from .base_parser import BaseParser
+from .csv_parser import CsvParser
 from .docx_parser import DocxParser
 from .xlsx_parser import XlsxParser
 from .pptx_parser import PptxParser
@@ -13,6 +14,7 @@ from ..utils.datamodel import DocumentMeta
 
 # Registered parsers (priority order)
 PARSERS: List[Type[BaseParser]] = [
+    CsvParser,
     DocxParser,
     XlsxParser,
     PptxParser,
