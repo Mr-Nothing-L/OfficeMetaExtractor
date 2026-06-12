@@ -17,6 +17,7 @@ from .drop_area import DropArea
 from .result_table import ResultTable
 from .audit_result_table import AuditResultTable
 from .audit_detail_dialog import AuditDetailDialog, AuditAlertListDialog
+from .ascii_starfield import AsciiStarfield
 from .styles import DARK_STYLE
 
 from ..core.extractor_core import MetaExtractor
@@ -150,18 +151,26 @@ class MainWindow(QMainWindow):
         logger.add_listener(self._on_log)
 
     def _init_ui(self):
-        # Central widget is the surface panel with a dark background
-        self._container = QWidget()
+        # Root central widget and opaque dark surface panel.
+        self._root = QWidget()
+        self._root.setObjectName("centralRoot")
+        self.setCentralWidget(self._root)
+
+        self._container = QWidget(self._root)
         self._container.setObjectName("surfacePanel")
-        self.setCentralWidget(self._container)
+
+        # The starfield lives inside the container, behind the result tables,
+        # so it shows through only the semi-transparent table area.
+        self._starfield = AsciiStarfield(self._container)
+        self._starfield.lower()
 
         main_layout = QVBoxLayout(self._container)
         main_layout.setSpacing(0)
-        main_layout.setContentsMargins(20, 14, 20, 14)
+        main_layout.setContentsMargins(28, 20, 28, 20)
 
         # ===== Header Row =====
         header_row = QHBoxLayout()
-        header_row.setSpacing(14)
+        header_row.setSpacing(16)
         header_row.setContentsMargins(0, 0, 0, 0)
 
         # Left: brand + file count
@@ -197,7 +206,10 @@ class MainWindow(QMainWindow):
         self.cmb_mode.currentIndexChanged.connect(self._on_mode_changed)
         header_row.addWidget(self.cmb_mode)
 
-        main_layout.addLayout(header_row)
+        header_widget = QWidget()
+        header_widget.setObjectName("panelRow")
+        header_widget.setLayout(header_row)
+        main_layout.addWidget(header_widget)
 
         # Separator
         sep1 = QFrame()
@@ -220,6 +232,7 @@ class MainWindow(QMainWindow):
         project_row.addWidget(self.edt_project_name, 1)
 
         self._project_row_widget = QWidget()
+        self._project_row_widget.setObjectName("panelRow")
         self._project_row_widget.setLayout(project_row)
         main_layout.addWidget(self._project_row_widget)
 
@@ -231,7 +244,7 @@ class MainWindow(QMainWindow):
 
         # ===== Action Buttons Row =====
         action_row = QHBoxLayout()
-        action_row.setSpacing(10)
+        action_row.setSpacing(14)
         action_row.setContentsMargins(0, 0, 0, 0)
 
         # Primary actions
@@ -294,7 +307,10 @@ class MainWindow(QMainWindow):
         self.btn_clear.setEnabled(False)
         action_row.addWidget(self.btn_clear)
 
-        main_layout.addLayout(action_row)
+        action_widget = QWidget()
+        action_widget.setObjectName("panelRow")
+        action_widget.setLayout(action_row)
+        main_layout.addWidget(action_widget)
 
         # ===== Progress & Status =====
         status_row = QHBoxLayout()
@@ -310,14 +326,22 @@ class MainWindow(QMainWindow):
         self.lbl_status.setObjectName("status")
         status_row.addWidget(self.lbl_status, 1)
 
-        main_layout.addLayout(status_row)
+        status_widget = QWidget()
+        status_widget.setObjectName("panelRow")
+        status_widget.setLayout(status_row)
+        main_layout.addWidget(status_widget)
         main_layout.addSpacing(6)
 
         # ===== Table =====
         self.tbl_stack = QStackedWidget()
+        self.tbl_stack.setObjectName("resultTableStack")
+
         self.tbl_single = ResultTable()
+        self.tbl_single.setObjectName("resultTable")
         self.tbl_single.item_double_clicked.connect(self._on_item_double_clicked)
+
         self.tbl_audit = AuditResultTable()
+        self.tbl_audit.setObjectName("resultTable")
         self.tbl_audit.item_double_clicked.connect(self._on_item_double_clicked)
         self.tbl_audit.show_audit_detail.connect(self._on_show_audit_detail)
         self.tbl_stack.addWidget(self.tbl_single)
@@ -331,6 +355,24 @@ class MainWindow(QMainWindow):
 
         self.cmb_mode.setCurrentIndex(0)
         self._apply_mode_ui()
+        self._sync_layers()
+
+    def _sync_layers(self):
+        """Keep the container and starfield filling the central widget."""
+        if not hasattr(self, "_root"):
+            return
+        rect = self._root.rect()
+        self._starfield.setGeometry(rect)
+        self._container.setGeometry(rect)
+        self._container.raise_()
+        if hasattr(self, "_starfield"):
+            self._starfield.lower()
+        if hasattr(self, "tbl_stack"):
+            self.tbl_stack.raise_()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._sync_layers()
 
     def _on_mode_changed(self, index):
         mode = self.cmb_mode.itemData(index)

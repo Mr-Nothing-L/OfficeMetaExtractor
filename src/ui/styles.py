@@ -98,10 +98,27 @@ QWidget {{
 }}
 
 /* ------------------------------------------------------------------
-   Surface panel
+   Root / surface layering
    ------------------------------------------------------------------ */
+#centralRoot {{
+    background-color: {Theme.BG_SURFACE};
+    border: none;
+}}
+
 #surfacePanel {{
     background-color: {Theme.BG_SURFACE};
+    border: none;
+}}
+
+#panelRow {{
+    background-color: {Theme.BG_SURFACE};
+    border: 1px solid {Theme.BORDER_SUBTLE};
+    border-radius: {RADIUS_CARD}px;
+    padding: 12px 20px;
+}}
+
+#resultTableStack {{
+    background-color: transparent;
     border: none;
 }}
 
@@ -663,5 +680,29 @@ QTextEdit {{
     padding: 6px;
     font-family: "SF Mono", "Menlo", "Consolas", monospace;
     font-size: 12px;
+}}
+
+/* ------------------------------------------------------------------
+   Result tables (semi-transparent so the background planets show through)
+   ------------------------------------------------------------------ */
+#resultTable {{
+    background-color: rgba(22, 22, 24, 165);
+    alternate-background-color: rgba(28, 28, 30, 140);
+    border: 1px solid rgba(44, 44, 47, 180);
+    gridline-color: rgba(35, 35, 38, 120);
+    selection-background-color: rgba(201, 162, 39, 0.14);
+}}
+
+#resultTable::item:selected {{
+    background-color: rgba(201, 162, 39, 0.14);
+}}
+
+#resultTable::item:hover {{
+    background-color: rgba(37, 37, 40, 170);
+}}
+
+#resultTable QHeaderView::section {{
+    background-color: {Theme.BG_PANEL};
+    border-bottom: 1px solid {Theme.BORDER};
 }}
 """
