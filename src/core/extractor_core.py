@@ -1,4 +1,5 @@
 """Core metadata extractor."""
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -19,10 +20,14 @@ from ..audit import (
 
 class MetaExtractor:
     """Main extractor coordinating parser calls."""
-    
-    def __init__(self):
+
+    # Use sequential parsing for very small batches to avoid thread-pool overhead.
+    PARALLEL_THRESHOLD = 4
+
+    def __init__(self, max_workers: int = None):
         self.results: List[DocumentMeta] = []
         self.errors: List[str] = []
+        self.max_workers = max_workers
     
     def extract(self, filepath: str) -> Dict[str, Any]:
         """Extract metadata from a single file."""
@@ -43,19 +48,23 @@ class MetaExtractor:
         result = parser.parse(path)
         return result.to_dict()
     
+    def _extract_one(self, filepath: str) -> Dict[str, Any]:
+        """Helper for batch_extract; exceptions are returned as failed statuses."""
+        try:
+            return self.extract(filepath)
+        except Exception as e:
+            logger.error(f"Failed to extract {filepath}: {e}")
+            return {
+                'filepath': filepath,
+                'status': f'失败: {str(e)}'
+            }
+
     def batch_extract(self, filepaths: List[str]) -> List[Dict[str, Any]]:
-        """Extract metadata from multiple files."""
-        results = []
-        for fp in filepaths:
-            try:
-                results.append(self.extract(fp))
-            except Exception as e:
-                logger.error(f"Failed to extract {fp}: {e}")
-                results.append({
-                    'filepath': fp,
-                    'status': f'失败: {str(e)}'
-                })
-        return results
+        """Extract metadata from multiple files (parallel when batch is large)."""
+        if len(filepaths) < self.PARALLEL_THRESHOLD:
+            return [self._extract_one(fp) for fp in filepaths]
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            return list(executor.map(self._extract_one, filepaths))
     
     def scan_directory(self, directory: str, recursive: bool = True) -> List[str]:
         """Scan a directory for supported files."""
@@ -63,19 +72,34 @@ class MetaExtractor:
         if not root.exists() or not root.is_dir():
             logger.error(f"Directory not found: {directory}")
             return []
-        
-        files = []
-        if recursive:
-            for ext in SUPPORTED_EXT:
-                files.extend(root.rglob(f'*{ext}'))
-        else:
-            for ext in SUPPORTED_EXT:
-                files.extend(root.glob(f'*{ext}'))
-        
+
+        # Single traversal is faster than one rglob per extension.
+        pattern = root.rglob('*') if recursive else root.glob('*')
+        files = [f for f in pattern if f.is_file() and f.suffix.lower() in SUPPORTED_EXT]
+
         # Sort and deduplicate
         files = sorted(set(files))
         logger.info(f"Found {len(files)} supported files in {directory}")
         return [str(f) for f in files]
+
+    def _parse_audit_one(self, filepath: str) -> DocumentMeta:
+        """Parse a single file and fill in company name from path."""
+        try:
+            meta = parse_file(Path(filepath))
+        except Exception as e:
+            logger.error(f"Failed to parse {filepath}: {e}")
+            meta = DocumentMeta(
+                filename=Path(filepath).name,
+                filepath=filepath,
+                file_format=Path(filepath).suffix.upper()[1:] or 'UNKNOWN',
+                parse_success=False,
+                error_message=str(e),
+            )
+
+        # Fill company from path if parser did not provide one
+        if not meta.company:
+            meta.company = extract_company_name(filepath)
+        return meta
 
     def audit(self, project_name: str, folder_path: str, output_excel: str = None) -> Dict[str, Any]:
         """Run full audit pipeline: scan -> parse -> detect -> generate report.
@@ -90,26 +114,13 @@ class MetaExtractor:
             'detail_table', 'output_excel'.
         """
         files = self.scan_directory(folder_path, recursive=True)
-        results: List[DocumentMeta] = []
 
-        for filepath in files:
-            try:
-                meta = parse_file(Path(filepath))
-            except Exception as e:
-                logger.error(f"Failed to parse {filepath}: {e}")
-                meta = DocumentMeta(
-                    filename=Path(filepath).name,
-                    filepath=filepath,
-                    file_format=Path(filepath).suffix.upper()[1:] or 'UNKNOWN',
-                    parse_success=False,
-                    error_message=str(e),
-                )
-
-            # Fill company from path if parser did not provide one
-            if not meta.company:
-                meta.company = extract_company_name(filepath)
-
-            results.append(meta)
+        # Parse files in parallel when the batch is large enough to amortize overhead.
+        if len(files) < self.PARALLEL_THRESHOLD:
+            results: List[DocumentMeta] = [self._parse_audit_one(fp) for fp in files]
+        else:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                results = list(executor.map(self._parse_audit_one, files))
 
         alerts = []
         alerts.extend(check_author_consistency(results))
