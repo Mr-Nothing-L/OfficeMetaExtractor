@@ -45,7 +45,7 @@ setup(
     cmdclass={'build_ext': build_ext},
     zip_safe=False,
 )
-''')
+''', encoding='utf-8')
 
     # Write Cython source that wraps the real MetaExtractor class
     # The .pyx imports from Python modules so the actual logic stays in Python.
@@ -57,147 +57,36 @@ The actual logic lives in Python modules (src.parsers, src.utils, src.audit).
 This wrapper just cythonizes the class interface to make casual
 disassembly/decompilation harder.
 """
-from pathlib import Path
-import cython
-
-# Import real implementations from Python modules at runtime
-from src.parsers import parse_file, get_parser, SUPPORTED_EXT
-from src.utils.datamodel import DocumentMeta
-from src.utils.logger import logger
-from src.audit import (
-    extract_company_name,
-    check_author_consistency,
-    check_creation_time_clustering,
-    check_modified_time_clustering,
-    check_template_reuse,
-    generate_summary_table,
-    generate_detail_table,
-    export_to_excel,
-)
+from src.core._extractor_core import MetaExtractor as _PyMetaExtractor
 
 
 cdef class MetaExtractor:
-    """Compiled extractor coordinating parser calls."""
-    cdef public list results
-    cdef public list errors
+    """Compiled extractor coordinating parser calls.
 
-    def __init__(self):
-        self.results = []
-        self.errors = []
+    All behaviour is delegated to the Python implementation so that
+    improvements in src.core.extractor_core are picked up automatically.
+    """
+    cdef object _impl
+
+    def __init__(self, max_workers=None):
+        self._impl = _PyMetaExtractor(max_workers=max_workers)
 
     cpdef dict extract(self, str filepath):
         """Extract metadata from a single file."""
-        cdef object path = Path(filepath)
-        cdef object parser
-        cdef object result
-
-        if not path.exists():
-            return {
-                'filepath': filepath,
-                'status': '失败: 文件不存在'
-            }
-
-        parser = get_parser(path)
-        if parser is None:
-            return {
-                'filepath': filepath,
-                'status': '失败: 不支持的格式 ' + path.suffix
-            }
-
-        result = parser.parse(path)
-        return result.to_dict()
+        return self._impl.extract(filepath)
 
     cpdef list batch_extract(self, list filepaths):
         """Extract metadata from multiple files."""
-        cdef list results = []
-        cdef str fp
-        cdef dict res
-        for fp in filepaths:
-            try:
-                res = self.extract(fp)
-                results.append(res)
-            except Exception as e:
-                logger.error(f"Failed to extract {fp}: {e}")
-                results.append({
-                    'filepath': fp,
-                    'status': '失败: ' + str(e)
-                })
-        return results
+        return self._impl.batch_extract(filepaths)
 
     def scan_directory(self, str directory, bint recursive=True):
         """Scan a directory for supported files."""
-        cdef object root = Path(directory)
-        cdef list files = []
-        cdef str ext
-
-        if not root.exists() or not root.is_dir():
-            logger.error(f"Directory not found: {directory}")
-            return []
-
-        if recursive:
-            for ext in SUPPORTED_EXT:
-                files.extend(root.rglob('*' + ext))
-        else:
-            for ext in SUPPORTED_EXT:
-                files.extend(root.glob('*' + ext))
-
-        # Sort and deduplicate
-        files = sorted(set(files))
-        logger.info(f"Found {len(files)} supported files in {directory}")
-        return [str(f) for f in files]
+        return self._impl.scan_directory(directory, recursive=recursive)
 
     def audit(self, str project_name, str folder_path, str output_excel=None):
         """Run full audit pipeline: scan -> parse -> detect -> generate report."""
-        cdef list files = self.scan_directory(folder_path, recursive=True)
-        cdef list results = []
-        cdef str filepath
-        cdef object meta
-        cdef list alerts
-        cdef object summary_table
-        cdef object detail_table
-        cdef str saved_path
-
-        for filepath in files:
-            try:
-                meta = parse_file(Path(filepath))
-            except Exception as e:
-                logger.error(f"Failed to parse {filepath}: {e}")
-                meta = DocumentMeta(
-                    filename=Path(filepath).name,
-                    filepath=filepath,
-                    file_format=Path(filepath).suffix.upper()[1:] or 'UNKNOWN',
-                    parse_success=False,
-                    error_message=str(e),
-                )
-
-            # Fill company from path if parser did not provide one
-            if not meta.company:
-                meta.company = extract_company_name(filepath)
-
-            results.append(meta)
-
-        alerts = []
-        alerts.extend(check_author_consistency(results))
-        alerts.extend(check_creation_time_clustering(results, threshold_minutes=30))
-        alerts.extend(check_modified_time_clustering(results, threshold_minutes=30))
-        alerts.extend(check_template_reuse(results, project_name))
-
-        summary_table = generate_summary_table(results, alerts)
-        detail_table = generate_detail_table(results, alerts)
-
-        saved_path = None
-        if output_excel:
-            if export_to_excel(summary_table, detail_table, output_excel):
-                saved_path = output_excel
-
-        return {
-            'results': results,
-            'alerts': alerts,
-            'summary_table': summary_table,
-            'detail_table': detail_table,
-            'output_excel': saved_path,
-        }
-''')
+        return self._impl.audit(project_name, folder_path, output_excel=output_excel)
+''', encoding='utf-8')
 
     # Build
     result = subprocess.run(
