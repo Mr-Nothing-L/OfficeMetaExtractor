@@ -31,8 +31,11 @@ class PptxParser(BaseParser):
             meta.keywords = self._safe_str(cp.keywords)
             meta.comments = self._safe_str(cp.comments)
             meta.revision = self._safe_str(cp.revision)
-            meta.total_editing_time = cp.total_editing_time
-            
+            try:
+                meta.total_editing_time = cp.total_editing_time
+            except Exception:
+                pass
+
             if cp.created:
                 meta.created = cp.created
             if cp.modified:

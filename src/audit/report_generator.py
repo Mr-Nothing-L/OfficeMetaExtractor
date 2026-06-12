@@ -6,6 +6,10 @@ from typing import List, Dict, Any
 from ..utils.datamodel import DocumentMeta, AuditAlert, CompanyAuditResult
 from .risk_scorer import calculate_risk_scores
 
+# Excel styling constants (kept here to avoid a UI dependency)
+_EXCEL_HEADER_FILL = "B88C28"
+_EXCEL_HEADER_FONT = "FFFFFF"
+
 
 def _fmt_range(time_range):
     """Format a (min, max) datetime tuple."""
@@ -123,8 +127,8 @@ def export_to_excel(summary_data: List[Dict[str, Any]],
                 return
             headers = list(rows[0].keys())
 
-            header_font = Font(bold=True, color='FFFFFF')
-            header_fill = PatternFill(start_color='0E639C', end_color='0E639C', fill_type='solid')
+            header_font = Font(bold=True, color=_EXCEL_HEADER_FONT)
+            header_fill = PatternFill(start_color=_EXCEL_HEADER_FILL, end_color=_EXCEL_HEADER_FILL, fill_type='solid')
             header_align = Alignment(horizontal='center', vertical='center')
 
             for col_idx, header in enumerate(headers, 1):
