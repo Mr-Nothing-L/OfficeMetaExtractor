@@ -142,17 +142,24 @@ def export_to_excel(summary_data: List[Dict[str, Any]],
                     value = row.get(header, '')
                     ws.cell(row=row_idx, column=col_idx, value=value)
 
-            # Auto column widths
+            def _visual_width(text):
+                """Approximate visual width: ASCII=1, CJK/other wide chars=2."""
+                width = 0
+                for ch in str(text):
+                    width += 2 if ord(ch) > 127 else 1
+                return width
+
+            # Auto column widths (CJK characters count as ~2 widths)
             for col in ws.columns:
-                max_len = 0
+                max_width = 0
                 col_letter = col[0].column_letter
                 for cell in col:
                     try:
                         if cell.value is not None:
-                            max_len = max(max_len, len(str(cell.value)))
+                            max_width = max(max_width, _visual_width(cell.value))
                     except Exception:
                         pass
-                ws.column_dimensions[col_letter].width = min(max_len + 2, 50)
+                ws.column_dimensions[col_letter].width = max(min(max_width + 3, 60), 10)
 
         write_sheet(wb.active, '公司汇总', summary_data)
 
