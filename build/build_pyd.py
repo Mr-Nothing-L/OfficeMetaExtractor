@@ -22,6 +22,8 @@ except (AttributeError, OSError):
 
 
 def build_pyd():
+    # NOTE: src.utils.license is not Cythonized by this script. Ensure it is
+    # collected/included by the final PyInstaller or embedded build.
     core_dir = Path(__file__).parent.parent / "src" / "core"
     build_dir = core_dir / "cython_build"
 

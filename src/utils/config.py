@@ -3,8 +3,13 @@ import sys
 from pathlib import Path
 
 APP_NAME = "OfficeMetaExtractor"
-APP_VERSION = "1.0.0"
+APP_VERSION = "2.0.0"
 APP_DESCRIPTION = "Extract metadata from Office documents and PDFs"
+
+# Licensing / purchase configuration
+PURCHASE_URL = "https://github.com/Mr-Nothing-L/OfficeMetaExtractor"
+TRIAL_FILE_LIMIT = 5
+TRIAL_DAYS = 14
 
 # Supported file extensions
 SUPPORTED_EXTENSIONS = {

@@ -53,6 +53,7 @@ def build():
         "--hidden-import=src.parsers.pdf_parser",
         "--hidden-import=src.utils.datamodel",
         "--hidden-import=src.utils.logger",
+        "--hidden-import=src.utils.license",
         "--hidden-import=src.utils.config",
         "--hidden-import=src.audit",
         "--hidden-import=src.audit.company_extractor",

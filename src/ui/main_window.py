@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import (
     QMenuBar, QMenu, QAction, QComboBox, QLineEdit,
     QStackedWidget, QFrame, QToolButton, QCheckBox
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QUrl
+from PyQt5.QtGui import QDesktopServices
 
 from .drop_area import DropArea
 from .result_table import ResultTable
@@ -19,11 +20,14 @@ from .audit_result_table import AuditResultTable
 from .audit_detail_dialog import AuditDetailDialog, AuditAlertListDialog
 from .ascii_starfield import AsciiStarfield
 from .styles import DARK_STYLE
+from .activation_dialog import ActivationDialog
 
 from ..core.extractor_core import MetaExtractor
 from ..parsers import SUPPORTED_EXT
 from ..utils.logger import logger
 from ..utils.cache import get_default_cache
+from ..utils.config import PURCHASE_URL, TRIAL_FILE_LIMIT
+from ..utils.license import get_license_status, save_license_key
 from ..audit import export_to_excel as audit_export_to_excel
 
 
@@ -179,6 +183,7 @@ class MainWindow(QMainWindow):
         self._init_menubar()
 
         logger.add_listener(self._on_log)
+        self._check_license()
 
     def _init_ui(self):
         # Root central widget and opaque dark surface panel.
@@ -501,12 +506,46 @@ class MainWindow(QMainWindow):
 
         help_menu = menubar.addMenu("帮助")
 
+        enter_license_action = QAction("输入激活码", self)
+        enter_license_action.triggered.connect(self._on_enter_license)
+        help_menu.addAction(enter_license_action)
+
+        buy_license_action = QAction("购买授权", self)
+        buy_license_action.triggered.connect(self._on_buy_license)
+        help_menu.addAction(buy_license_action)
+
+        help_menu.addSeparator()
+
         about_action = QAction("关于", self)
         about_action.triggered.connect(self._on_about)
         help_menu.addAction(about_action)
 
     def _apply_styles(self):
         self.setStyleSheet(DARK_STYLE)
+
+    def _check_license(self):
+        """Check license status at startup and update the status bar."""
+        status = get_license_status()
+        if status.get("mode") == "expired":
+            dialog = ActivationDialog(self)
+            dialog.exec_()
+            status = get_license_status()
+
+        if status.get("mode") == "licensed":
+            self.status_bar.showMessage("已授权")
+        else:
+            self.status_bar.showMessage(status.get("message", "未授权"))
+
+    def _check_trial_limit(self, files: List[str]) -> bool:
+        """Block large batches when running under a trial/unlicensed mode."""
+        status = get_license_status()
+        if status.get("mode") != "licensed" and len(files) > TRIAL_FILE_LIMIT:
+            QMessageBox.information(
+                self, "试用版限制",
+                f"试用版每次最多处理 {TRIAL_FILE_LIMIT} 个文件，请购买授权解除限制。"
+            )
+            return False
+        return True
 
     def _on_files_dropped(self, paths: List[str]):
         if self._current_mode == "audit":
@@ -558,6 +597,9 @@ class MainWindow(QMainWindow):
         files = extractor.scan_directory(folder_path, recursive=True)
         if not files:
             QMessageBox.information(self, "提示", "未找到支持的文件")
+            return
+
+        if not self._check_trial_limit(files):
             return
 
         self._cache.clear()
@@ -647,6 +689,10 @@ class MainWindow(QMainWindow):
         if not files:
             return
         files = sorted(set(files))
+
+        if not self._check_trial_limit(files):
+            return
+
         self._cache.clear()
         self.tbl_single.clear_data()
         self.lbl_file_count.setText(f"{len(files)} 个文件")
@@ -764,11 +810,31 @@ class MainWindow(QMainWindow):
     def _on_log(self, msg: str):
         self.status_bar.showMessage(msg, 3000)
 
+    def _on_enter_license(self):
+        """Open the license activation dialog."""
+        dialog = ActivationDialog(self)
+        dialog.exec_()
+        self._check_license()
+
+    def _on_buy_license(self):
+        """Open the purchase/website link in the default browser."""
+        QDesktopServices.openUrl(
+            QUrl(PURCHASE_URL)
+        )
+
     def _on_about(self):
+        status = get_license_status()
+        license_text = status.get("message", "未知")
+        if status.get("mode") == "licensed":
+            license_text = "已授权"
+        elif status.get("mode") == "trial":
+            license_text = f"试用期剩余 {status.get('days_left')} 天"
+
         QMessageBox.about(
             self, "关于",
             "<b>OfficeMetaExtractor v2.0.0</b><br>"
             "提取 Office 文档和 PDF 的元信息<br><br>"
+            f"授权状态: {license_text}<br><br>"
             "支持格式: DOCX, XLSX, PPTX, DOC, XLS, PPT, PDF<br><br>"
             "支持导出: CSV, JSON, Excel"
         )

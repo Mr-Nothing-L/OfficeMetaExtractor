@@ -17,5 +17,6 @@ Cython==0.29.37
 PyInstaller==5.13.2
 
 # Utilities
+cryptography>=42.0.0
 pandas>=1.5.0
 pathlib2==2.3.7; python_version<"3.4"
