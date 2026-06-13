@@ -98,8 +98,14 @@ def _write_multi_ico(path: Path, images: list) -> None:
     path.write_bytes(header + entries + data)
 
 
-def generate_ico(source: Image.Image) -> None:
-    """Generate a multi-resolution Windows .ico file that fills the frame."""
+def generate_ico() -> None:
+    """Generate a multi-resolution Windows .ico file directly from the source.
+
+    We use the original source asset (instead of the normalized 1024x1024
+    square) so Windows sees the exact same transparency/contents as the
+    upstream image.
+    """
+    source = _open_source(SRC_FILE)
     icons = []
     for size in ICO_SIZES:
         resized = source.resize((size, size), Image.Resampling.LANCZOS)
@@ -168,7 +174,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     source = _normalize_source()
-    generate_ico(source)
+    generate_ico()
     if sys.platform == "darwin":
         try:
             generate_icns(source)
