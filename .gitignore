@@ -26,6 +26,8 @@ audit_test_report.xlsx
 metadata.xlsx
 claude_desktop_config.json
 
+.codegraph/
+
 # understand-anything intermediate / logs
 .understand-anything/.trash-*/
 .understand-anything/intermediate/

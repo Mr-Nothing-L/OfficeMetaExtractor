@@ -1,8 +1,96 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "ded06e242782807febfc6dc06816e79260bec418",
-  "generatedAt": "2026-06-13T03:00:24.892Z",
+  "gitCommitHash": "1805fca78e3ceedb570706b3b29f2f3c6b5ee7bd",
+  "generatedAt": "2026-06-13T04:44:19.645Z",
   "files": {
+    "generate_key.py": {
+      "filePath": "generate_key.py",
+      "contentHash": "c91fb7f44a2eec8cca017ae0819adf0ba6f8a4eb046def1ff910fb0be93f9df9",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 24
+        }
+      ],
+      "classes": [
+        {
+          "name": "LicenseKeyGenerator",
+          "methods": [
+            "__init__",
+            "_build_ui",
+            "_center",
+            "generate_key",
+            "copy_to_clipboard",
+            "_show_error"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 130
+        }
+      ],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QApplication",
+            "QWidget",
+            "QVBoxLayout",
+            "QHBoxLayout",
+            "QLabel",
+            "QLineEdit",
+            "QTextEdit",
+            "QPushButton",
+            "QMessageBox",
+            "QDesktopWidget"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QClipboard"
+          ]
+        },
+        {
+          "source": "src.ui.styles",
+          "specifiers": [
+            "DARK_STYLE",
+            "Theme"
+          ]
+        },
+        {
+          "source": "src.utils.license",
+          "specifiers": [
+            "generate_license_key"
+          ]
+        }
+      ],
+      "exports": [
+        "LicenseKeyGenerator",
+        "main"
+      ],
+      "totalLines": 190,
+      "hasStructuralAnalysis": true
+    },
     "main.py": {
       "filePath": "main.py",
       "contentHash": "37162eb67afeed7e14b075579615d71db1a30e5d9fe1fbcaaf7a4955afff5016",
@@ -1135,6 +1223,73 @@
       "totalLines": 1,
       "hasStructuralAnalysis": true
     },
+    "src/ui/activation_dialog.py": {
+      "filePath": "src/ui/activation_dialog.py",
+      "contentHash": "6125192a6777086bdb4f7e78c711afc6c0b73501f2150180630bb5534b897f27",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ActivationDialog",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "_apply_styles",
+            "_on_copy_machine_code",
+            "_on_buy",
+            "_on_activate"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 143
+        }
+      ],
+      "imports": [
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QDialog",
+            "QVBoxLayout",
+            "QHBoxLayout",
+            "QLabel",
+            "QLineEdit",
+            "QPushButton",
+            "QMessageBox",
+            "QApplication"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "QUrl"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QDesktopServices"
+          ]
+        },
+        {
+          "source": "..utils.license",
+          "specifiers": [
+            "get_machine_code",
+            "save_license_key"
+          ]
+        },
+        {
+          "source": "..utils.config",
+          "specifiers": [
+            "PURCHASE_URL"
+          ]
+        }
+      ],
+      "exports": [
+        "ActivationDialog"
+      ],
+      "totalLines": 156,
+      "hasStructuralAnalysis": true
+    },
     "src/ui/ascii_earth.py": {
       "filePath": "src/ui/ascii_earth.py",
       "contentHash": "7345c59a0be6c40d6886df8f86562529b41cabbefdd866696cd990433ed88d67",
@@ -1607,7 +1762,7 @@
     },
     "src/ui/main_window.py": {
       "filePath": "src/ui/main_window.py",
-      "contentHash": "0c5690db5d0be26bb12f9f7426ecc9400afee15e243b7911a9b208909ec5cb73",
+      "contentHash": "bbf4ed382a80f8f6180b7db12e97252d48dc140592208a39bb16c069d5761f61",
       "functions": [],
       "classes": [
         {
@@ -1644,6 +1799,8 @@
             "_apply_mode_ui",
             "_init_menubar",
             "_apply_styles",
+            "_check_license",
+            "_check_trial_limit",
             "_on_files_dropped",
             "_on_select_files",
             "_on_select_folder",
@@ -1665,12 +1822,14 @@
             "_on_view_alerts",
             "_on_item_double_clicked",
             "_on_log",
+            "_on_enter_license",
+            "_on_buy_license",
             "_on_about",
             "closeEvent"
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 619
+          "lineCount": 681
         }
       ],
       "imports": [
@@ -1727,7 +1886,14 @@
           "specifiers": [
             "Qt",
             "QThread",
-            "pyqtSignal"
+            "pyqtSignal",
+            "QUrl"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QDesktopServices"
           ]
         },
         {
@@ -1768,6 +1934,12 @@
           ]
         },
         {
+          "source": ".activation_dialog",
+          "specifiers": [
+            "ActivationDialog"
+          ]
+        },
+        {
           "source": "..core.extractor_core",
           "specifiers": [
             "MetaExtractor"
@@ -1792,6 +1964,20 @@
           ]
         },
         {
+          "source": "..utils.config",
+          "specifiers": [
+            "PURCHASE_URL",
+            "TRIAL_FILE_LIMIT"
+          ]
+        },
+        {
+          "source": "..utils.license",
+          "specifiers": [
+            "get_license_status",
+            "save_license_key"
+          ]
+        },
+        {
           "source": "..audit",
           "specifiers": [
             "audit_export_to_excel"
@@ -1803,7 +1989,7 @@
         "AuditWorker",
         "MainWindow"
       ],
-      "totalLines": 781,
+      "totalLines": 847,
       "hasStructuralAnalysis": true
     },
     "src/ui/models.py": {
@@ -2121,7 +2307,7 @@
     },
     "src/utils/config.py": {
       "filePath": "src/utils/config.py",
-      "contentHash": "7f6162948163f0b189fa385a44753b321d32872d466558db421d5a59849e2ee8",
+      "contentHash": "a5ecac2e0e69baf591ba1d8199403388fd397e44a70cc71e413defb2dc7f53a8",
       "functions": [],
       "classes": [],
       "imports": [
@@ -2139,7 +2325,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 44,
+      "totalLines": 49,
       "hasStructuralAnalysis": true
     },
     "src/utils/datamodel.py": {
@@ -2240,6 +2426,245 @@
         "DocumentMeta"
       ],
       "totalLines": 102,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/license.py": {
+      "filePath": "src/utils/license.py",
+      "contentHash": "e79b36f0e6d17c7b2b607e474dbda9ea14673d00c500df745505a8f13b9a8ef0",
+      "functions": [
+        {
+          "name": "_stable_machine_id",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 69
+        },
+        {
+          "name": "_get_secret",
+          "params": [],
+          "returnType": "bytes",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_encode_key",
+          "params": [
+            "machine_hash",
+            "expiry_ts"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_decode_key",
+          "params": [
+            "key"
+          ],
+          "returnType": "Optional[Dict[str, any]]",
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "generate_license_key",
+          "params": [
+            "machine_code",
+            "days",
+            "secret"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "get_machine_code",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_license_store_path",
+          "params": [],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_load_store",
+          "params": [],
+          "returnType": "Dict",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_save_store",
+          "params": [
+            "data"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_record_trial_start",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "get_trial_days_left",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "is_trial_active",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "validate_license",
+          "params": [
+            "license_key"
+          ],
+          "returnType": "Dict[str, any]",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "get_license_status",
+          "params": [
+            "license_key"
+          ],
+          "returnType": "Dict[str, any]",
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "save_license_key",
+          "params": [
+            "license_key"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "clear_license",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "base64",
+          "specifiers": [
+            "base64"
+          ]
+        },
+        {
+          "source": "hashlib",
+          "specifiers": [
+            "hashlib"
+          ]
+        },
+        {
+          "source": "hmac",
+          "specifiers": [
+            "hmac"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "platform",
+          "specifiers": [
+            "platform"
+          ]
+        },
+        {
+          "source": "struct",
+          "specifiers": [
+            "struct"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "timezone"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Dict",
+            "Optional"
+          ]
+        },
+        {
+          "source": ".config",
+          "specifiers": [
+            "APP_NAME",
+            "TRIAL_DAYS"
+          ]
+        }
+      ],
+      "exports": [
+        "_stable_machine_id",
+        "_get_secret",
+        "_encode_key",
+        "_decode_key",
+        "generate_license_key",
+        "get_machine_code",
+        "_license_store_path",
+        "_load_store",
+        "_save_store",
+        "_record_trial_start",
+        "get_trial_days_left",
+        "is_trial_active",
+        "validate_license",
+        "get_license_status",
+        "save_license_key",
+        "clear_license"
+      ],
+      "totalLines": 298,
       "hasStructuralAnalysis": true
     },
     "src/utils/logger.py": {
