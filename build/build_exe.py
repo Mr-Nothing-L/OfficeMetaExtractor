@@ -22,8 +22,8 @@ def clean():
     print("OK 清理旧构建")
 
 def build():
-    icon_ico = PROJECT_ROOT / "icon" / "icon_blackgolden.ico"
-    icon_png = PROJECT_ROOT / "icon" / "icon_blackgolden.png"
+    icon_ico = PROJECT_ROOT / "icon" / "icon_nobackground.ico"
+    icon_png = PROJECT_ROOT / "icon" / "icon_nobackground.png"
     add_data_sep = ";" if sys.platform == "win32" else ":"
 
     cmd = [

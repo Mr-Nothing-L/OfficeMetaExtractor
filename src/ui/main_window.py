@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         self._init_menubar()
 
-        icon_path = resource_path("icon/icon_blackgolden.png")
+        icon_path = resource_path("icon/icon_nobackground.png")
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
 

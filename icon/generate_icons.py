@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate platform icon assets from icon_blackgolden.png.
+"""Generate platform icon assets from icon_nobackground.png.
 
 Usage:
     source venv/bin/activate
@@ -16,11 +16,46 @@ from pathlib import Path
 from PIL import Image
 
 ICON_DIR = Path(__file__).parent.resolve()
-SRC_PNG = ICON_DIR / "icon_blackgolden.png"
-ICO_OUT = ICON_DIR / "icon_blackgolden.ico"
-ICNS_OUT = ICON_DIR / "icon_blackgolden.icns"
+# Source file has a .jpeg extension but contains PNG data with transparency.
+SRC_FILE = ICON_DIR / "icon_nobackground.jpeg"
+SRC_PNG = ICON_DIR / "icon_nobackground.png"
+ICO_OUT = ICON_DIR / "icon_nobackground.ico"
+ICNS_OUT = ICON_DIR / "icon_nobackground.icns"
 
-SIZES = [16, 32, 48, 64, 128, 256]
+ICO_SIZES = [16, 32, 48, 64, 128, 256]
+
+
+def _open_source(path: Path) -> Image.Image:
+    """Open the source icon robustly, regardless of the declared extension."""
+    with open(path, "rb") as f:
+        data = f.read()
+    return Image.open(io.BytesIO(data)).convert("RGBA")
+
+
+def _crop_transparent_margins(img: Image.Image) -> Image.Image:
+    """Crop empty transparent margins while keeping the content centered."""
+    alpha = img.getchannel("A")
+    bbox = alpha.getbbox()
+    if bbox is None:
+        return img
+    return img.crop(bbox)
+
+
+def _normalize_source() -> Image.Image:
+    """Create the normalized RGBA PNG source from the upstream asset."""
+    img = _open_source(SRC_FILE)
+    img = _crop_transparent_margins(img)
+    # Keep a high-resolution square source; downsample to 1024x1024 for
+    # reasonable file sizes while preserving plenty of detail for all targets.
+    img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+    # Ensure exact square dimensions (thumbnail preserves aspect ratio).
+    width, height = img.size
+    size = max(width, height)
+    square = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    square.paste(img, ((size - width) // 2, (size - height) // 2))
+    square.save(SRC_PNG, format="PNG")
+    print(f"Generated: {SRC_PNG} ({square.width}x{square.height})")
+    return square
 
 
 def _write_multi_ico(path: Path, images: list) -> None:
@@ -63,19 +98,18 @@ def _write_multi_ico(path: Path, images: list) -> None:
     path.write_bytes(header + entries + data)
 
 
-def generate_ico() -> None:
-    """Generate a multi-resolution Windows .ico file."""
-    img = Image.open(SRC_PNG).convert("RGBA")
+def generate_ico(source: Image.Image) -> None:
+    """Generate a multi-resolution Windows .ico file that fills the frame."""
     icons = []
-    for size in SIZES:
-        resized = img.resize((size, size), Image.Resampling.LANCZOS)
+    for size in ICO_SIZES:
+        resized = source.resize((size, size), Image.Resampling.LANCZOS)
         icons.append(resized)
     ICO_OUT.unlink(missing_ok=True)
     _write_multi_ico(ICO_OUT, icons)
     print(f"Generated: {ICO_OUT}")
 
 
-def generate_icns() -> bool:
+def generate_icns(source: Image.Image) -> bool:
     """Generate a macOS .icns file using sips + iconutil.
 
     Returns True on success, False if the macOS tooling is unavailable.
@@ -84,9 +118,14 @@ def generate_icns() -> bool:
     iconutil = shutil.which("iconutil")
     if not sips or not iconutil:
         print("sips/iconutil not found; skipping .icns generation.")
+        print("macOS builders should run iconutil manually on icon_nobackground.iconset.")
         return False
 
-    iconset_dir = ICON_DIR / "icon_blackgolden.iconset"
+    iconset_dir = ICON_DIR / "icon_nobackground.iconset"
+    # Save a temporary high-res PNG for sips to consume.
+    temp_source = ICON_DIR / "icon_nobackground_source_for_icns.png"
+    source.save(temp_source, format="PNG")
+
     iconset_dir.mkdir(exist_ok=True)
 
     # macOS iconset sizes
@@ -103,34 +142,38 @@ def generate_icns() -> bool:
         ("icon_512x512@2x.png", 1024),
     ]
 
-    for filename, size in mac_sizes:
-        out_path = iconset_dir / filename
-        subprocess.run(
-            [sips, "-z", str(size), str(size), str(SRC_PNG), "--out", str(out_path)],
-            check=True,
-            capture_output=True,
-        )
+    try:
+        for filename, size in mac_sizes:
+            out_path = iconset_dir / filename
+            subprocess.run(
+                [sips, "-z", str(size), str(size), str(temp_source), "--out", str(out_path)],
+                check=True,
+                capture_output=True,
+            )
 
-    ICNS_OUT.unlink(missing_ok=True)
-    subprocess.run([iconutil, "-c", "icns", str(iconset_dir)], check=True)
-    print(f"Generated: {ICNS_OUT}")
+        ICNS_OUT.unlink(missing_ok=True)
+        subprocess.run([iconutil, "-c", "icns", str(iconset_dir)], check=True)
+        print(f"Generated: {ICNS_OUT}")
+    finally:
+        # Clean up temporary iconset and helper PNG.
+        shutil.rmtree(iconset_dir, ignore_errors=True)
+        temp_source.unlink(missing_ok=True)
 
-    # Clean up temporary iconset
-    shutil.rmtree(iconset_dir)
     return True
 
 
 if __name__ == "__main__":
-    if not SRC_PNG.exists():
-        print(f"Source icon not found: {SRC_PNG}", file=sys.stderr)
+    if not SRC_FILE.exists():
+        print(f"Source icon not found: {SRC_FILE}", file=sys.stderr)
         sys.exit(1)
 
-    generate_ico()
+    source = _normalize_source()
+    generate_ico(source)
     if sys.platform == "darwin":
         try:
-            generate_icns()
+            generate_icns(source)
         except Exception as e:
             print(f"Failed to generate .icns: {e}", file=sys.stderr)
             sys.exit(1)
     else:
-        print("Run this on macOS to generate icon_blackgolden.icns.")
+        print("Run this on macOS to generate icon_nobackground.icns.")

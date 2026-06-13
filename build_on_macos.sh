@@ -31,10 +31,10 @@ pip install PyInstaller
 
 echo "🔨 Building macOS .app bundle..."
 
-ICON_PATH="icon/icon_blackgolden.icns"
+ICON_PATH="icon/icon_nobackground.icns"
 if [ ! -f "$ICON_PATH" ]; then
     echo "⚠️  $ICON_PATH not found, falling back to PNG icon."
-    ICON_PATH="icon/icon_blackgolden.png"
+    ICON_PATH="icon/icon_nobackground.png"
 fi
 
 pyinstaller \
@@ -47,8 +47,8 @@ pyinstaller \
     --specpath=build/pyinstaller \
     --paths=src \
     --icon="$ICON_PATH" \
-    --add-data="icon/icon_blackgolden.png:icon" \
-    --add-data="icon/icon_blackgolden.icns:icon" \
+    --add-data="icon/icon_nobackground.png:icon" \
+    --add-data="icon/icon_nobackground.icns:icon" \
     --collect-all src \
     --collect-all docx \
     --collect-all openpyxl \
@@ -65,8 +65,8 @@ APP_BUNDLE="dist/OfficeMetaExtractor.app"
 if [ -d "$APP_BUNDLE" ]; then
     RESOURCES_DIR="$APP_BUNDLE/Contents/Resources"
     mkdir -p "$RESOURCES_DIR"
-    cp "icon/icon_blackgolden.icns" "$RESOURCES_DIR/" 2>/dev/null || true
-    cp "icon/icon_blackgolden.png" "$RESOURCES_DIR/"
+    cp "icon/icon_nobackground.icns" "$RESOURCES_DIR/" 2>/dev/null || true
+    cp "icon/icon_nobackground.png" "$RESOURCES_DIR/"
     echo "📦 Copied icon resources into $RESOURCES_DIR"
 fi
 
