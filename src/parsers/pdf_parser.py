@@ -17,7 +17,7 @@ class PdfParser(BaseParser):
     def _validate_header(cls, filepath: Path) -> bool:
         return cls._check_header(filepath, cls.HEADER)
     
-    def parse(self, filepath: Path) -> DocumentMeta:
+    def parse(self, filepath: Path, detailed: bool = False) -> DocumentMeta:
         meta = self._make_meta(filepath, 'PDF')
         
         try:

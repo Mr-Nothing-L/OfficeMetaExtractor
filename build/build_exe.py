@@ -57,7 +57,6 @@ def build():
         "--hidden-import=src.audit",
         "--hidden-import=src.audit.company_extractor",
         "--hidden-import=src.audit.detector",
-        "--hidden-import=src.audit.risk_scorer",
         "--hidden-import=src.audit.report_generator",
         str(PROJECT_ROOT / "main.py")
     ]

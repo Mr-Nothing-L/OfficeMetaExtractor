@@ -93,7 +93,7 @@ def export_json(results: list, output_path: str):
 
 
 def run_audit_mode(extractor: MetaExtractor, directory: str, project_name: str, output_path: str):
-    """运行招标审计模式并打印结果。"""
+    """运行批量提取模式并打印结果。"""
     result = extractor.audit(project_name, directory, output_excel=output_path)
 
     alerts = result['alerts']
@@ -101,19 +101,19 @@ def run_audit_mode(extractor: MetaExtractor, directory: str, project_name: str, 
     detail_table = result['detail_table']
 
     print(f"\n{'='*80}")
-    print("  OfficeMetaExtractor 招标审计结果")
+    print("  OfficeMetaExtractor 批量提取结果")
     print(f"{'='*80}")
     print(f"  项目: {project_name or '未指定'}")
     print(f"  目录: {Path(directory).absolute()}")
     print(f"  文件数: {len(result['results'])}")
-    print(f"  告警数: {len(alerts)}")
+    print(f"  发现数: {len(alerts)}")
     print(f"{'='*80}\n")
 
     if alerts:
-        print(f"{'规则':<22} {'严重':<8} {'描述'}")
+        print(f"{'规则':<22} {'描述'}")
         print("-" * 80)
         for alert in alerts:
-            print(f"{alert.rule_name:<22} {alert.severity:<8} {alert.description}")
+            print(f"{alert.rule_name:<22} {alert.description}")
             print(f"    涉及公司: {', '.join(alert.affected_companies)}")
         print()
     else:
@@ -121,12 +121,12 @@ def run_audit_mode(extractor: MetaExtractor, directory: str, project_name: str, 
 
     if summary_table:
         print(f"{'='*80}")
-        print("  公司风险汇总")
+        print("  公司汇总")
         print(f"{'='*80}")
-        print(f"{'公司名':<20} {'文件数':<8} {'风险评分':<8} {'风险等级':<10}")
-        print("-" * 60)
+        print(f"{'公司名':<20} {'文件数':<8}")
+        print("-" * 30)
         for row in summary_table:
-            print(f"{row['公司名称']:<20} {row['文件数量']:<8} {row['风险评分']:<8} {row['风险等级']:<10}")
+            print(f"{row['公司名称']:<20} {row['文件数量']:<8}")
         print()
 
     if result['output_excel']:
@@ -162,7 +162,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='详细输出')
     parser.add_argument('-e', '--export', help='导出结果为 JSON 文件')
     parser.add_argument('-t', '--timeout', type=int, default=30, help='单文件超时时间(秒)')
-    parser.add_argument('--audit', action='store_true', help='启用审计模式（招标审计）')
+    parser.add_argument('--audit', action='store_true', help='启用批量提取模式')
     parser.add_argument('--project-name', default='', help='项目名称（审计模式使用）')
     parser.add_argument('--audit-output', default='audit_report.xlsx', help='审计报告输出路径')
     

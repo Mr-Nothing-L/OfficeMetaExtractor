@@ -35,7 +35,7 @@ class BaseParser(ABC):
             return False
     
     @abstractmethod
-    def parse(self, filepath: Path) -> DocumentMeta:
+    def parse(self, filepath: Path, detailed: bool = False) -> DocumentMeta:
         pass
     
     def _make_meta(self, filepath: Path, fmt: str) -> DocumentMeta:

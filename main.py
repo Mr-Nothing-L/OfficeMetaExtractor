@@ -24,7 +24,7 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     app.setApplicationName("OfficeMetaExtractor")
-    app.setApplicationVersion("1.0.0")
+    app.setApplicationVersion("2.0.0")
 
     window = MainWindow()
     window.show()

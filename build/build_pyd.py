@@ -76,24 +76,28 @@ cdef class MetaExtractor:
     """
     cdef object _impl
 
-    def __init__(self, max_workers=None):
-        self._impl = _PyMetaExtractor(max_workers=max_workers)
+    def __init__(self, max_workers=None, bint detailed=False):
+        self._impl = _PyMetaExtractor(max_workers=max_workers, detailed=detailed)
 
-    cpdef dict extract(self, str filepath):
+    cpdef dict extract(self, str filepath, object detailed=None):
         """Extract metadata from a single file."""
-        return self._impl.extract(filepath)
+        if detailed is None:
+            return self._impl.extract(filepath)
+        return self._impl.extract(filepath, detailed=detailed)
 
-    cpdef list batch_extract(self, list filepaths):
+    cpdef list batch_extract(self, list filepaths, object detailed=None):
         """Extract metadata from multiple files."""
-        return self._impl.batch_extract(filepaths)
+        if detailed is None:
+            return self._impl.batch_extract(filepaths)
+        return self._impl.batch_extract(filepaths, detailed=detailed)
 
     def scan_directory(self, str directory, bint recursive=True):
         """Scan a directory for supported files."""
         return self._impl.scan_directory(directory, recursive=recursive)
 
-    def audit(self, str project_name, str folder_path, str output_excel=None):
+    def audit(self, str project_name, str folder_path, str output_excel=None, bint detailed=False, list files=None):
         """Run full audit pipeline: scan -> parse -> detect -> generate report."""
-        return self._impl.audit(project_name, folder_path, output_excel=output_excel)
+        return self._impl.audit(project_name, folder_path, output_excel=output_excel, detailed=detailed, files=files)
 ''', encoding='utf-8')
 
     # Build

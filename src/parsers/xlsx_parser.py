@@ -19,19 +19,31 @@ class XlsxParser(BaseParser):
     def _validate_header(cls, filepath: Path) -> bool:
         return cls._check_header(filepath, cls.HEADER)
 
-    def parse(self, filepath: Path) -> DocumentMeta:
+    def parse(self, filepath: Path, detailed: bool = False) -> DocumentMeta:
         meta = self._make_meta(filepath, 'XLSX')
 
         # Fast path: only read the OOXML package metadata. This avoids loading
         # the entire workbook, which is slow for large spreadsheets.
         try:
             props = _ooxml_fast.parse_ooxml_core(filepath)
-            if props or _ooxml_fast.has_core_xml(filepath):
+            if detailed:
+                if props or _ooxml_fast.has_core_xml(filepath):
+                    self._apply_props(meta, props)
+                    meta.parse_success = True
+                    return meta
+            elif props:
                 self._apply_props(meta, props)
                 meta.parse_success = True
                 return meta
         except Exception:
             pass
+
+        if not detailed:
+            meta.parse_success = False
+            meta.error_message = (
+                "快速模式仅读取 OOXML 核心属性，文件缺少 core.xml 或内容为空"
+            )
+            return meta
 
         # Fallback: use openpyxl when the fast path yields nothing.
         try:

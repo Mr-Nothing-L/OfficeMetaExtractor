@@ -28,7 +28,7 @@ for p in PARSERS:
     SUPPORTED_EXT.update(p.SUPPORTED_EXTENSIONS)
 
 
-def get_parser(filepath: Path) -> Optional[BaseParser]:
+def get_parser(filepath: Path, detailed: bool = False) -> Optional[BaseParser]:
     """Get the appropriate parser for a file."""
     for parser_cls in PARSERS:
         if parser_cls.can_parse(filepath):
@@ -36,7 +36,7 @@ def get_parser(filepath: Path) -> Optional[BaseParser]:
     return None
 
 
-def parse_file(filepath: Path) -> DocumentMeta:
+def parse_file(filepath: Path, detailed: bool = False) -> DocumentMeta:
     """Parse a single file and return metadata."""
     parser = get_parser(filepath)
     if parser is None:
@@ -48,12 +48,12 @@ def parse_file(filepath: Path) -> DocumentMeta:
             error_message=f"不支持的文件格式: {filepath.suffix}"
         )
         return meta
-    return parser.parse(filepath)
+    return parser.parse(filepath, detailed=detailed)
 
 
-def parse_files(filepaths: List[Path]) -> List[DocumentMeta]:
+def parse_files(filepaths: List[Path], detailed: bool = False) -> List[DocumentMeta]:
     """Parse multiple files."""
     results = []
     for fp in filepaths:
-        results.append(parse_file(fp))
+        results.append(parse_file(fp, detailed=detailed))
     return results

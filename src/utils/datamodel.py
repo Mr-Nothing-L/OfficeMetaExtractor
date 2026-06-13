@@ -25,8 +25,6 @@ class CompanyAuditResult:
     creation_time_range: Optional[tuple] = None
     modification_time_range: Optional[tuple] = None
     templates_used: List[str] = field(default_factory=list)
-    risk_score: int = 0
-    risk_level: str = "low"
 
 
 @dataclass

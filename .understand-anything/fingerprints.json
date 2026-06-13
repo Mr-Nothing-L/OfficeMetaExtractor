@@ -1,0 +1,2425 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "ded06e242782807febfc6dc06816e79260bec418",
+  "generatedAt": "2026-06-13T03:00:24.892Z",
+  "files": {
+    "main.py": {
+      "filePath": "main.py",
+      "contentHash": "37162eb67afeed7e14b075579615d71db1a30e5d9fe1fbcaaf7a4955afff5016",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "src.ui.main_window",
+          "specifiers": [
+            "MainWindow"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QApplication"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "src/__init__.py": {
+      "filePath": "src/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/audit/__init__.py": {
+      "filePath": "src/audit/__init__.py",
+      "contentHash": "49e697fa647f93959d11ea6ebc99162a8ee173523c7cdf690490d0eac8788f0f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": ".company_extractor",
+          "specifiers": [
+            "extract_company_name"
+          ]
+        },
+        {
+          "source": ".detector",
+          "specifiers": [
+            "check_author_consistency",
+            "check_creation_time_clustering",
+            "check_modified_time_clustering",
+            "check_template_reuse"
+          ]
+        },
+        {
+          "source": ".report_generator",
+          "specifiers": [
+            "generate_summary_table",
+            "generate_detail_table",
+            "export_to_excel"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
+    "src/audit/company_extractor.py": {
+      "filePath": "src/audit/company_extractor.py",
+      "contentHash": "aaca3f8827eb856ec0d7faee7e9d95d49bcf20b65ce93dca08cc479d3fbd73c4",
+      "functions": [
+        {
+          "name": "extract_company_name",
+          "params": [
+            "filepath"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "extract_company_name"
+      ],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "src/audit/detector.py": {
+      "filePath": "src/audit/detector.py",
+      "contentHash": "e0936850ff54952f28a3f9149a3e124532a3971133a2af927e18f6f161f31d4d",
+      "functions": [
+        {
+          "name": "_company_for",
+          "params": [
+            "meta"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_severity_for_company_count",
+          "params": [
+            "count"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "check_author_consistency",
+          "params": [
+            "results"
+          ],
+          "returnType": "List[AuditAlert]",
+          "exported": true,
+          "lineCount": 53
+        },
+        {
+          "name": "_time_bucket",
+          "params": [
+            "dt",
+            "threshold_minutes"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_check_time_clustering",
+          "params": [
+            "results",
+            "threshold_minutes",
+            "field"
+          ],
+          "returnType": "List[AuditAlert]",
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "check_creation_time_clustering",
+          "params": [
+            "results",
+            "threshold_minutes"
+          ],
+          "returnType": "List[AuditAlert]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "check_modified_time_clustering",
+          "params": [
+            "results",
+            "threshold_minutes"
+          ],
+          "returnType": "List[AuditAlert]",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "check_template_reuse",
+          "params": [
+            "results",
+            "current_project_name"
+          ],
+          "returnType": "List[AuditAlert]",
+          "exported": true,
+          "lineCount": 38
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "collections",
+          "specifiers": [
+            "defaultdict"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Optional"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta",
+            "AuditAlert"
+          ]
+        }
+      ],
+      "exports": [
+        "_company_for",
+        "_severity_for_company_count",
+        "check_author_consistency",
+        "_time_bucket",
+        "_check_time_clustering",
+        "check_creation_time_clustering",
+        "check_modified_time_clustering",
+        "check_template_reuse"
+      ],
+      "totalLines": 174,
+      "hasStructuralAnalysis": true
+    },
+    "src/audit/report_generator.py": {
+      "filePath": "src/audit/report_generator.py",
+      "contentHash": "8fd467afefa31c6ed9699fd5fde5583c4fc3db6a987d32b3918eaeac319c9104",
+      "functions": [
+        {
+          "name": "_fmt_range",
+          "params": [
+            "time_range"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_build_company_results",
+          "params": [
+            "results"
+          ],
+          "returnType": "List[CompanyAuditResult]",
+          "exported": true,
+          "lineCount": 46
+        },
+        {
+          "name": "generate_summary_table",
+          "params": [
+            "results",
+            "alerts"
+          ],
+          "returnType": "List[Dict[str, Any]]",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "generate_detail_table",
+          "params": [
+            "results",
+            "alerts"
+          ],
+          "returnType": "List[Dict[str, Any]]",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "export_to_excel",
+          "params": [
+            "summary_data",
+            "detail_data",
+            "output_path"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "collections",
+          "specifiers": [
+            "defaultdict"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Dict",
+            "Any"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta",
+            "AuditAlert",
+            "CompanyAuditResult"
+          ]
+        }
+      ],
+      "exports": [
+        "_fmt_range",
+        "_build_company_results",
+        "generate_summary_table",
+        "generate_detail_table",
+        "export_to_excel"
+      ],
+      "totalLines": 169,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/__init__.py": {
+      "filePath": "src/core/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/_extractor_core.py": {
+      "filePath": "src/core/_extractor_core.py",
+      "contentHash": "72571834cde3854f56b6b2933f0bc80409c53f997381a302eb222191da749382",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetaExtractor",
+          "methods": [
+            "__init__",
+            "extract",
+            "_extract_one",
+            "batch_extract",
+            "scan_directory",
+            "_parse_audit_one",
+            "_parse_audit_one_with_timeout",
+            "audit"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 212
+        }
+      ],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "concurrent.futures",
+          "specifiers": [
+            "ThreadPoolExecutor"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Dict",
+            "Any",
+            "Optional"
+          ]
+        },
+        {
+          "source": "..parsers",
+          "specifiers": [
+            "parse_file",
+            "get_parser",
+            "SUPPORTED_EXT"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        },
+        {
+          "source": "..utils.logger",
+          "specifiers": [
+            "logger"
+          ]
+        },
+        {
+          "source": "..audit",
+          "specifiers": [
+            "extract_company_name",
+            "check_author_consistency",
+            "check_creation_time_clustering",
+            "check_modified_time_clustering",
+            "check_template_reuse",
+            "generate_summary_table",
+            "generate_detail_table",
+            "export_to_excel"
+          ]
+        }
+      ],
+      "exports": [
+        "MetaExtractor"
+      ],
+      "totalLines": 235,
+      "hasStructuralAnalysis": true
+    },
+    "src/core/extractor_core.py": {
+      "filePath": "src/core/extractor_core.py",
+      "contentHash": "ea1490e461e6e3bf25274e242a3f80af5063e1338d12036d34fd5d6dbb5211d6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "._extractor_core",
+          "specifiers": [
+            "MetaExtractor"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "src/main.py": {
+      "filePath": "src/main.py",
+      "contentHash": "3fb71a85471f2f837957bc0d25f125cf7a644cec939863a84b612dc3c477c0a1",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QApplication"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt"
+          ]
+        },
+        {
+          "source": "ui.main_window",
+          "specifiers": [
+            "MainWindow"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/__init__.py": {
+      "filePath": "src/parsers/__init__.py",
+      "contentHash": "befa63016ebada0b84dc3b4658f0af64415c9311125a9303272a994adf5d9378",
+      "functions": [
+        {
+          "name": "get_parser",
+          "params": [
+            "filepath",
+            "detailed"
+          ],
+          "returnType": "Optional[BaseParser]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "parse_file",
+          "params": [
+            "filepath",
+            "detailed"
+          ],
+          "returnType": "DocumentMeta",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "parse_files",
+          "params": [
+            "filepaths",
+            "detailed"
+          ],
+          "returnType": "List[DocumentMeta]",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Type",
+            "Optional"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": ".csv_parser",
+          "specifiers": [
+            "CsvParser"
+          ]
+        },
+        {
+          "source": ".docx_parser",
+          "specifiers": [
+            "DocxParser"
+          ]
+        },
+        {
+          "source": ".xlsx_parser",
+          "specifiers": [
+            "XlsxParser"
+          ]
+        },
+        {
+          "source": ".pptx_parser",
+          "specifiers": [
+            "PptxParser"
+          ]
+        },
+        {
+          "source": ".ole_parser",
+          "specifiers": [
+            "OleParser"
+          ]
+        },
+        {
+          "source": ".pdf_parser",
+          "specifiers": [
+            "PdfParser"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "get_parser",
+        "parse_file",
+        "parse_files"
+      ],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/_ooxml_fast.py": {
+      "filePath": "src/parsers/_ooxml_fast.py",
+      "contentHash": "5e9e38c49bd69f0edf4e6dc5afc3a4ca04fab46a2f9aa26059fc0df2952fe5cd",
+      "functions": [
+        {
+          "name": "_parse_w3c_datetime",
+          "params": [
+            "text"
+          ],
+          "returnType": "Optional[datetime]",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "_get_text",
+          "params": [
+            "root",
+            "tag",
+            "ns"
+          ],
+          "returnType": "Optional[str]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_safe_int",
+          "params": [
+            "value"
+          ],
+          "returnType": "Optional[int]",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "has_core_xml",
+          "params": [
+            "filepath"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "parse_ooxml_core",
+          "params": [
+            "filepath"
+          ],
+          "returnType": "Dict[str, Any]",
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "timezone"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Dict",
+            "Optional"
+          ]
+        },
+        {
+          "source": "zipfile",
+          "specifiers": [
+            "zipfile"
+          ]
+        },
+        {
+          "source": "xml.etree",
+          "specifiers": [
+            "ET"
+          ]
+        }
+      ],
+      "exports": [
+        "_parse_w3c_datetime",
+        "_get_text",
+        "_safe_int",
+        "has_core_xml",
+        "parse_ooxml_core"
+      ],
+      "totalLines": 133,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/base_parser.py": {
+      "filePath": "src/parsers/base_parser.py",
+      "contentHash": "ab202f818ae86c7907978b14bbdc515988b3eb71b12603839a35e8590eec8765",
+      "functions": [],
+      "classes": [
+        {
+          "name": "BaseParser",
+          "methods": [
+            "can_parse",
+            "_validate_header",
+            "_check_header",
+            "parse",
+            "_make_meta",
+            "_safe_str"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "imports": [
+        {
+          "source": "abc",
+          "specifiers": [
+            "ABC",
+            "abstractmethod"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "BaseParser"
+      ],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/csv_parser.py": {
+      "filePath": "src/parsers/csv_parser.py",
+      "contentHash": "128e74ecc069f396170c24179595bfc85ffa00fc33ade59b540dee56190eb1a6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "CsvParser",
+          "methods": [
+            "_validate_header",
+            "parse"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "imports": [
+        {
+          "source": "csv",
+          "specifiers": [
+            "csv"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "CsvParser"
+      ],
+      "totalLines": 46,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/docx_parser.py": {
+      "filePath": "src/parsers/docx_parser.py",
+      "contentHash": "a0d06957d357a8b46cf81207f9dd68f10860ab71be5d6c5619893637c75e7cd2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "DocxParser",
+          "methods": [
+            "_validate_header",
+            "parse",
+            "_apply_props"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 84
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "docx",
+          "specifiers": [
+            "Document"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "_ooxml_fast"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "DocxParser"
+      ],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/ole_parser.py": {
+      "filePath": "src/parsers/ole_parser.py",
+      "contentHash": "f5675d40f532e09ae10eab0ef71117b05701c297a9945122534be21674a99893",
+      "functions": [
+        {
+          "name": "filetime_to_datetime",
+          "params": [
+            "ft"
+          ],
+          "returnType": "Optional[Any]",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "OleParser",
+          "methods": [
+            "_validate_header",
+            "parse",
+            "_parse_com",
+            "_parse_olefile",
+            "_get_com_app"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 128
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Optional",
+            "Any"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "filetime_to_datetime",
+        "OleParser"
+      ],
+      "totalLines": 150,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/pdf_parser.py": {
+      "filePath": "src/parsers/pdf_parser.py",
+      "contentHash": "fe3c3930e85c46d378d98c69160c612a73cf7ccc8d1f87a93c5ff0f5dfd7f4b2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "PdfParser",
+          "methods": [
+            "_validate_header",
+            "parse"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 44
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "PyPDF2",
+          "specifiers": [
+            "PdfReader"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "PdfParser"
+      ],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/pptx_parser.py": {
+      "filePath": "src/parsers/pptx_parser.py",
+      "contentHash": "bf22a6f2101e8fd080cf62e884d8560ab177a3c4858005d13989dd268d5f6f2b",
+      "functions": [],
+      "classes": [
+        {
+          "name": "PptxParser",
+          "methods": [
+            "_validate_header",
+            "parse",
+            "_apply_props"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 83
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "pptx",
+          "specifiers": [
+            "Presentation"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "_ooxml_fast"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "PptxParser"
+      ],
+      "totalLines": 94,
+      "hasStructuralAnalysis": true
+    },
+    "src/parsers/xlsx_parser.py": {
+      "filePath": "src/parsers/xlsx_parser.py",
+      "contentHash": "5f4095ee454c0ec509fbc39df4e880208fc7431e30f9a70152092ab96637df4b",
+      "functions": [],
+      "classes": [
+        {
+          "name": "XlsxParser",
+          "methods": [
+            "_validate_header",
+            "parse",
+            "_apply_props"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 93
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "openpyxl",
+          "specifiers": [
+            "load_workbook"
+          ]
+        },
+        {
+          "source": ".base_parser",
+          "specifiers": [
+            "BaseParser"
+          ]
+        },
+        {
+          "source": ".",
+          "specifiers": [
+            "_ooxml_fast"
+          ]
+        },
+        {
+          "source": "..utils.datamodel",
+          "specifiers": [
+            "DocumentMeta"
+          ]
+        }
+      ],
+      "exports": [
+        "XlsxParser"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/__init__.py": {
+      "filePath": "src/ui/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/ascii_earth.py": {
+      "filePath": "src/ui/ascii_earth.py",
+      "contentHash": "7345c59a0be6c40d6886df8f86562529b41cabbefdd866696cd990433ed88d67",
+      "functions": [
+        {
+          "name": "_color_to_rgb",
+          "params": [
+            "color"
+          ],
+          "returnType": "Tuple[int, int, int]",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "_color_to_rgba",
+          "params": [
+            "color",
+            "alpha"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "AsciiPlanet",
+          "methods": [
+            "__init__",
+            "set_alpha",
+            "set_color",
+            "set_speed",
+            "set_radius",
+            "set_pattern_seed",
+            "set_interval",
+            "pause",
+            "resume",
+            "is_animating",
+            "_apply_style",
+            "_hash",
+            "_generate_surface_mask",
+            "_tick",
+            "_render",
+            "resizeEvent",
+            "paintEvent"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 278
+        },
+        {
+          "name": "AsciiEarth",
+          "methods": [
+            "__init__"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "math",
+          "specifiers": [
+            "math"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Tuple",
+            "Union"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "QTimer"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QFont",
+            "QFontDatabase",
+            "QFontMetrics",
+            "QColor",
+            "QPainter"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QWidget"
+          ]
+        }
+      ],
+      "exports": [
+        "_color_to_rgb",
+        "_color_to_rgba",
+        "AsciiPlanet",
+        "AsciiEarth"
+      ],
+      "totalLines": 336,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/ascii_starfield.py": {
+      "filePath": "src/ui/ascii_starfield.py",
+      "contentHash": "7b70e3fe9b7f3c7fb524ad2447cbe1a9dd495bfe9321c8a85539fd755f1e5683",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AsciiStarfield",
+          "methods": [
+            "__init__",
+            "pause",
+            "resume",
+            "is_animating",
+            "showEvent",
+            "hideEvent",
+            "changeEvent",
+            "resizeEvent",
+            "paintEvent",
+            "_regenerate_stars",
+            "_prefer_reduced_motion",
+            "_top_level_is_minimized",
+            "_should_animate",
+            "_update_animation_state",
+            "_layout_planets",
+            "_advance_orbits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 235
+        }
+      ],
+      "imports": [
+        {
+          "source": "math",
+          "specifiers": [
+            "math"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "random",
+          "specifiers": [
+            "random"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List",
+            "Tuple"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "QTimer",
+            "QPointF"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QColor",
+            "QPainter",
+            "QPen"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QWidget"
+          ]
+        },
+        {
+          "source": ".ascii_earth",
+          "specifiers": [
+            "AsciiPlanet"
+          ]
+        }
+      ],
+      "exports": [
+        "AsciiStarfield"
+      ],
+      "totalLines": 250,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/audit_detail_dialog.py": {
+      "filePath": "src/ui/audit_detail_dialog.py",
+      "contentHash": "48cd77aec8dfe84c71aff03ed0370fe2f8b97815cc54d6eec9ccb8fcb7ba2cb7",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AuditDetailDialog",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "_format_details",
+            "_detail_key_label",
+            "_apply_styles",
+            "_on_mark_handled",
+            "is_handled"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 263
+        },
+        {
+          "name": "AuditAlertListDialog",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "_apply_styles",
+            "_on_item_double_clicked",
+            "_on_view_detail",
+            "_open_detail"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 111
+        }
+      ],
+      "imports": [
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QDialog",
+            "QVBoxLayout",
+            "QHBoxLayout",
+            "QLabel",
+            "QPushButton",
+            "QTextEdit",
+            "QListWidget",
+            "QListWidgetItem",
+            "QGroupBox",
+            "QSplitter"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "pyqtSignal"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QFont",
+            "QColor"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Dict",
+            "Any"
+          ]
+        },
+        {
+          "source": ".styles",
+          "specifiers": [
+            "Theme"
+          ]
+        }
+      ],
+      "exports": [
+        "AuditDetailDialog",
+        "AuditAlertListDialog"
+      ],
+      "totalLines": 391,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/audit_result_table.py": {
+      "filePath": "src/ui/audit_result_table.py",
+      "contentHash": "6b76612e2bab97b80e879d7a681eb17cbeec35d9972c7881f86e3163eb2ca1c2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AuditResultTable",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "set_data",
+            "append_row",
+            "append_rows",
+            "get_data",
+            "clear_data",
+            "selected_rows_data",
+            "_show_context_menu",
+            "_copy_cell",
+            "_copy_row",
+            "_open_file_location",
+            "_on_view_detail",
+            "_on_double_click",
+            "export_csv",
+            "export_json",
+            "export_excel"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 232
+        }
+      ],
+      "imports": [
+        {
+          "source": "csv",
+          "specifiers": [
+            "csv"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Dict",
+            "List"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QTableView",
+            "QAbstractItemView",
+            "QHeaderView",
+            "QMenu",
+            "QAction",
+            "QMessageBox",
+            "QFileDialog"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "pyqtSignal",
+            "QModelIndex"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QColor"
+          ]
+        },
+        {
+          "source": ".styles",
+          "specifiers": [
+            "Theme"
+          ]
+        },
+        {
+          "source": ".models",
+          "specifiers": [
+            "AuditTableModel"
+          ]
+        }
+      ],
+      "exports": [
+        "AuditResultTable"
+      ],
+      "totalLines": 252,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/drop_area.py": {
+      "filePath": "src/ui/drop_area.py",
+      "contentHash": "6450f5c635be0780b6108e948f2e6be23f778d14e7291e08ea2b84e9983ff947",
+      "functions": [],
+      "classes": [
+        {
+          "name": "DropArea",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "_create_upload_icon",
+            "dragEnterEvent",
+            "dragLeaveEvent",
+            "dropEvent",
+            "mousePressEvent",
+            "set_hint"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 157
+        }
+      ],
+      "imports": [
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QWidget",
+            "QVBoxLayout",
+            "QLabel"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "pyqtSignal",
+            "QSize"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QDragEnterEvent",
+            "QDropEvent",
+            "QPainter",
+            "QPixmap",
+            "QPen",
+            "QColor",
+            "QFont"
+          ]
+        },
+        {
+          "source": ".styles",
+          "specifiers": [
+            "Theme"
+          ]
+        }
+      ],
+      "exports": [
+        "DropArea"
+      ],
+      "totalLines": 169,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/main_window.py": {
+      "filePath": "src/ui/main_window.py",
+      "contentHash": "0c5690db5d0be26bb12f9f7426ecc9400afee15e243b7911a9b208909ec5cb73",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ExtractionWorker",
+          "methods": [
+            "__init__",
+            "_extract_with_timeout",
+            "run",
+            "stop"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 83
+        },
+        {
+          "name": "AuditWorker",
+          "methods": [
+            "__init__",
+            "run",
+            "stop"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 45
+        },
+        {
+          "name": "MainWindow",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "_sync_layers",
+            "resizeEvent",
+            "_on_mode_changed",
+            "_apply_mode_ui",
+            "_init_menubar",
+            "_apply_styles",
+            "_on_files_dropped",
+            "_on_select_files",
+            "_on_select_folder",
+            "_run_audit",
+            "_on_audit_row_ready",
+            "_on_audit_results",
+            "_collect_files",
+            "_process_files",
+            "_on_single_row_ready",
+            "_on_progress",
+            "_on_results",
+            "_on_finished",
+            "_on_clear",
+            "_on_export_csv",
+            "_on_export_json",
+            "_on_export_excel",
+            "_on_export_audit",
+            "_on_show_audit_detail",
+            "_on_view_alerts",
+            "_on_item_double_clicked",
+            "_on_log",
+            "_on_about",
+            "closeEvent"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 619
+        }
+      ],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QMainWindow",
+            "QWidget",
+            "QVBoxLayout",
+            "QHBoxLayout",
+            "QPushButton",
+            "QLabel",
+            "QProgressBar",
+            "QStatusBar",
+            "QFileDialog",
+            "QMessageBox",
+            "QMenuBar",
+            "QMenu",
+            "QAction",
+            "QComboBox",
+            "QLineEdit",
+            "QStackedWidget",
+            "QFrame",
+            "QToolButton",
+            "QCheckBox"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "QThread",
+            "pyqtSignal"
+          ]
+        },
+        {
+          "source": ".drop_area",
+          "specifiers": [
+            "DropArea"
+          ]
+        },
+        {
+          "source": ".result_table",
+          "specifiers": [
+            "ResultTable"
+          ]
+        },
+        {
+          "source": ".audit_result_table",
+          "specifiers": [
+            "AuditResultTable"
+          ]
+        },
+        {
+          "source": ".audit_detail_dialog",
+          "specifiers": [
+            "AuditDetailDialog",
+            "AuditAlertListDialog"
+          ]
+        },
+        {
+          "source": ".ascii_starfield",
+          "specifiers": [
+            "AsciiStarfield"
+          ]
+        },
+        {
+          "source": ".styles",
+          "specifiers": [
+            "DARK_STYLE"
+          ]
+        },
+        {
+          "source": "..core.extractor_core",
+          "specifiers": [
+            "MetaExtractor"
+          ]
+        },
+        {
+          "source": "..parsers",
+          "specifiers": [
+            "SUPPORTED_EXT"
+          ]
+        },
+        {
+          "source": "..utils.logger",
+          "specifiers": [
+            "logger"
+          ]
+        },
+        {
+          "source": "..utils.cache",
+          "specifiers": [
+            "get_default_cache"
+          ]
+        },
+        {
+          "source": "..audit",
+          "specifiers": [
+            "audit_export_to_excel"
+          ]
+        }
+      ],
+      "exports": [
+        "ExtractionWorker",
+        "AuditWorker",
+        "MainWindow"
+      ],
+      "totalLines": 781,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/models.py": {
+      "filePath": "src/ui/models.py",
+      "contentHash": "2598c9754a81eb9b0e274054884435ce3320dbd49b1be5ef1b2157d7776187b5",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetadataTableModel",
+          "methods": [
+            "__init__",
+            "set_data",
+            "clear",
+            "append_row",
+            "append_rows",
+            "set_cache",
+            "load_from_cache",
+            "get_data",
+            "row_count",
+            "row_for_index",
+            "rowCount",
+            "columnCount",
+            "headerData",
+            "data",
+            "flags"
+          ],
+          "properties": [
+            "COLUMN_HEADERS",
+            "COLUMN_KEYS"
+          ],
+          "exported": true,
+          "lineCount": 129
+        },
+        {
+          "name": "ResultTableModel",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "AuditTableModel",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "imports": [
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Dict",
+            "List",
+            "Optional"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "QAbstractTableModel",
+            "Qt",
+            "QModelIndex"
+          ]
+        },
+        {
+          "source": "..utils.cache",
+          "specifiers": [
+            "ResultCache"
+          ]
+        }
+      ],
+      "exports": [
+        "MetadataTableModel",
+        "ResultTableModel",
+        "AuditTableModel"
+      ],
+      "totalLines": 166,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/result_table.py": {
+      "filePath": "src/ui/result_table.py",
+      "contentHash": "3f37253dfcc35d3d481dd7acf11accc7440996625606c554cb08ff6a53770510",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ResultTable",
+          "methods": [
+            "__init__",
+            "_init_ui",
+            "set_data",
+            "append_row",
+            "append_rows",
+            "get_data",
+            "clear_data",
+            "selected_rows_data",
+            "_show_context_menu",
+            "_copy_cell",
+            "_copy_row",
+            "_open_file_location",
+            "_on_double_click",
+            "export_csv",
+            "export_json",
+            "export_excel"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 204
+        }
+      ],
+      "imports": [
+        {
+          "source": "csv",
+          "specifiers": [
+            "csv"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Dict",
+            "List"
+          ]
+        },
+        {
+          "source": "PyQt5.QtWidgets",
+          "specifiers": [
+            "QTableView",
+            "QAbstractItemView",
+            "QHeaderView",
+            "QMenu",
+            "QAction",
+            "QMessageBox",
+            "QFileDialog"
+          ]
+        },
+        {
+          "source": "PyQt5.QtCore",
+          "specifiers": [
+            "Qt",
+            "pyqtSignal",
+            "QModelIndex"
+          ]
+        },
+        {
+          "source": "PyQt5.QtGui",
+          "specifiers": [
+            "QColor",
+            "QFont"
+          ]
+        },
+        {
+          "source": ".styles",
+          "specifiers": [
+            "Theme"
+          ]
+        },
+        {
+          "source": ".models",
+          "specifiers": [
+            "ResultTableModel"
+          ]
+        }
+      ],
+      "exports": [
+        "ResultTable"
+      ],
+      "totalLines": 224,
+      "hasStructuralAnalysis": true
+    },
+    "src/ui/styles.py": {
+      "filePath": "src/ui/styles.py",
+      "contentHash": "1e96a0039ce0e383c2106a028d747b96beb545cb67cd01cd710f85f01bfd59e5",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Theme",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 70
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        }
+      ],
+      "exports": [
+        "Theme"
+      ],
+      "totalLines": 785,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/__init__.py": {
+      "filePath": "src/utils/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/cache.py": {
+      "filePath": "src/utils/cache.py",
+      "contentHash": "96a3f1f6198e8d25583fb93910d667b2543776d748ef137f59e1b94b6c080353",
+      "functions": [
+        {
+          "name": "get_default_cache",
+          "params": [],
+          "returnType": "ResultCache",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "ResultCache",
+          "methods": [
+            "__init__",
+            "path",
+            "clear",
+            "_ensure_dir",
+            "_file_exists_and_has_content",
+            "append",
+            "append_many",
+            "iter_rows",
+            "__len__",
+            "is_empty"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 142
+        }
+      ],
+      "imports": [
+        {
+          "source": "csv",
+          "specifiers": [
+            "csv"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "threading",
+          "specifiers": [
+            "threading"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Dict",
+            "Iterator",
+            "List",
+            "Optional",
+            "Union"
+          ]
+        }
+      ],
+      "exports": [
+        "ResultCache",
+        "get_default_cache"
+      ],
+      "totalLines": 171,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/config.py": {
+      "filePath": "src/utils/config.py",
+      "contentHash": "7f6162948163f0b189fa385a44753b321d32872d466558db421d5a59849e2ee8",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/datamodel.py": {
+      "filePath": "src/utils/datamodel.py",
+      "contentHash": "f21ce677952b6473403c030d90ffd697e8becdc29018857e095dfce694e589cd",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AuditAlert",
+          "methods": [],
+          "properties": [
+            "rule_name",
+            "severity",
+            "description",
+            "affected_companies",
+            "affected_files",
+            "details"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "CompanyAuditResult",
+          "methods": [],
+          "properties": [
+            "company_name",
+            "file_count",
+            "authors",
+            "last_modified_by",
+            "creation_time_range",
+            "modification_time_range",
+            "templates_used"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "DocumentMeta",
+          "methods": [
+            "to_dict",
+            "to_dict_full",
+            "_fmt_datetime",
+            "display_created",
+            "display_modified"
+          ],
+          "properties": [
+            "filename",
+            "filepath",
+            "file_format",
+            "author",
+            "last_modified_by",
+            "created",
+            "modified",
+            "title",
+            "subject",
+            "company",
+            "keywords",
+            "comments",
+            "template",
+            "revision",
+            "total_editing_time",
+            "file_size",
+            "parse_success",
+            "error_message",
+            "raw_props"
+          ],
+          "exported": true,
+          "lineCount": 71
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Optional",
+            "Dict",
+            "Any",
+            "List"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        }
+      ],
+      "exports": [
+        "AuditAlert",
+        "CompanyAuditResult",
+        "DocumentMeta"
+      ],
+      "totalLines": 102,
+      "hasStructuralAnalysis": true
+    },
+    "src/utils/logger.py": {
+      "filePath": "src/utils/logger.py",
+      "contentHash": "c9712c011b2aeb8cc42038baebb5af16f8c406cd7ca526d0395f9e84995a5cba",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Logger",
+          "methods": [
+            "__new__",
+            "_init",
+            "add_listener",
+            "remove_listener",
+            "_notify",
+            "log",
+            "info",
+            "warning",
+            "error",
+            "debug",
+            "get_logs"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 53
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "Logger"
+      ],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "test_cli.py": {
+      "filePath": "test_cli.py",
+      "contentHash": "80cb5cb18b4d9945f921fdb7526fc5a8f4b434faf40a40863c11f8b8b74887e0",
+      "functions": [
+        {
+          "name": "scan_directory",
+          "params": [
+            "directory",
+            "recursive"
+          ],
+          "returnType": "list",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "test_single_file",
+          "params": [
+            "extractor",
+            "filepath"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "print_results",
+          "params": [
+            "results",
+            "verbose"
+          ],
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "export_json",
+          "params": [
+            "results",
+            "output_path"
+          ],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "run_audit_mode",
+          "params": [
+            "extractor",
+            "directory",
+            "project_name",
+            "output_path"
+          ],
+          "exported": true,
+          "lineCount": 41
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 87
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "src.core.extractor_core",
+          "specifiers": [
+            "MetaExtractor"
+          ]
+        },
+        {
+          "source": "src.parsers",
+          "specifiers": [
+            "SUPPORTED_EXT"
+          ]
+        },
+        {
+          "source": "src.utils.logger",
+          "specifiers": [
+            "logger"
+          ]
+        }
+      ],
+      "exports": [
+        "scan_directory",
+        "test_single_file",
+        "print_results",
+        "export_json",
+        "run_audit_mode",
+        "main"
+      ],
+      "totalLines": 229,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

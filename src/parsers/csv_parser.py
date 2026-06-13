@@ -17,7 +17,7 @@ class CsvParser(BaseParser):
         """CSV has no magic header - accept any text file."""
         return True
     
-    def parse(self, filepath: Path) -> DocumentMeta:
+    def parse(self, filepath: Path, detailed: bool = False) -> DocumentMeta:
         meta = self._make_meta(filepath, 'CSV')
         
         try:

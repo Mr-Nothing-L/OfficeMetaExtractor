@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Dict, Any
 
 from ..utils.datamodel import DocumentMeta, AuditAlert, CompanyAuditResult
-from .risk_scorer import calculate_risk_scores
 
 # Excel styling constants (kept here to avoid a UI dependency)
 _EXCEL_HEADER_FILL = "B88C28"
@@ -73,8 +72,7 @@ def generate_summary_table(results: List[DocumentMeta],
                            alerts: List[AuditAlert]) -> List[Dict[str, Any]]:
     """Generate company-level summary rows for the audit report."""
     company_results = _build_company_results(results)
-    company_results = calculate_risk_scores(company_results, alerts)
-    company_results = sorted(company_results, key=lambda x: x.risk_score, reverse=True)
+    company_results = sorted(company_results, key=lambda x: x.company_name)
 
     rows = []
     for cr in company_results:
@@ -86,8 +84,6 @@ def generate_summary_table(results: List[DocumentMeta],
             '创建时间范围': _fmt_range(cr.creation_time_range),
             '修改时间范围': _fmt_range(cr.modification_time_range),
             '使用模板': ', '.join(cr.templates_used),
-            '风险评分': cr.risk_score,
-            '风险等级': cr.risk_level,
         })
     return rows
 
@@ -95,14 +91,12 @@ def generate_summary_table(results: List[DocumentMeta],
 def generate_detail_table(results: List[DocumentMeta],
                           alerts: List[AuditAlert]) -> List[Dict[str, Any]]:
     """Generate detailed finding rows for the audit report."""
-    severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
-    sorted_alerts = sorted(alerts, key=lambda a: severity_order.get(a.severity, 99))
+    sorted_alerts = sorted(alerts, key=lambda a: (a.rule_name, a.description))
 
     rows = []
     for alert in sorted_alerts:
         rows.append({
             '规则名称': alert.rule_name,
-            '严重程度': alert.severity,
             '描述': alert.description,
             '涉及公司': ', '.join(alert.affected_companies),
             '涉及文件数': len(alert.affected_files),

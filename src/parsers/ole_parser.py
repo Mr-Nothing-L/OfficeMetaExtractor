@@ -29,23 +29,24 @@ class OleParser(BaseParser):
     def _validate_header(cls, filepath: Path) -> bool:
         return cls._check_header(filepath, cls.HEADER)
     
-    def parse(self, filepath: Path) -> DocumentMeta:
+    def parse(self, filepath: Path, detailed: bool = False) -> DocumentMeta:
         meta = self._make_meta(
             filepath,
             filepath.suffix.upper()[1:]
         )
-        
-        # Try Windows COM first (most complete)
-        try:
-            import win32com.client
-            return self._parse_com(filepath, meta)
-        except ImportError:
-            pass
-        except Exception as e:
-            # COM failed, fall through to olefile
-            pass
-        
-        # Fallback to olefile
+
+        if detailed:
+            # Try Windows COM first (most complete)
+            try:
+                import win32com.client
+                return self._parse_com(filepath, meta)
+            except ImportError:
+                pass
+            except Exception:
+                # COM failed, fall through to olefile
+                pass
+
+        # Fallback to olefile (always used in fast mode, fallback in detailed mode)
         try:
             return self._parse_olefile(filepath, meta)
         except Exception as e:

@@ -3,7 +3,7 @@
 ; 下载: https://jrsoftware.org/isdl.php
 
 #define MyAppName "OfficeMetaExtractor"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "Mr-Nothing-L"
 #define MyAppURL "https://github.com/Mr-Nothing-L/OfficeMetaExtractor"
 #define MyAppExeName "OfficeMetaExtractor.exe"
