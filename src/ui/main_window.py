@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OfficeMetaExtractor v1.0")
+        self.setWindowTitle("OfficeMetaExtractor v2.0.0")
         self.setMinimumSize(960, 640)
         self.resize(1080, 760)
 
@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         self.lbl_title.setObjectName("title")
         brand_layout.addWidget(self.lbl_title)
 
-        self.lbl_version = QLabel("v1.0")
+        self.lbl_version = QLabel("v2.0.0")
         self.lbl_version.setObjectName("subtitle")
         brand_layout.addWidget(self.lbl_version)
 
