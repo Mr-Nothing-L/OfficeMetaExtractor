@@ -132,6 +132,33 @@ QWidget {{
 }}
 
 /* ------------------------------------------------------------------
+   Check Box
+   ------------------------------------------------------------------ */
+QCheckBox {{
+    color: {Theme.TEXT_SECONDARY};
+    font-size: 13px;
+    spacing: 6px;
+    background-color: transparent;
+}}
+
+QCheckBox::indicator {{
+    width: 16px;
+    height: 16px;
+    border: 1px solid {Theme.BORDER};
+    border-radius: 3px;
+    background-color: {Theme.BG_INPUT};
+}}
+
+QCheckBox::indicator:checked {{
+    background-color: {Theme.GOLD};
+    border-color: {Theme.GOLD};
+}}
+
+QCheckBox::indicator:hover {{
+    border-color: {Theme.GOLD_DIM};
+}}
+
+/* ------------------------------------------------------------------
    Drop Area
    ------------------------------------------------------------------ */
 DropArea {{
@@ -198,6 +225,32 @@ QTableWidget::item:selected {{
 }}
 
 QTableWidget::item:hover {{
+    background-color: {Theme.BG_HOVER};
+}}
+
+QTableView {{
+    background-color: {Theme.BG_TABLE};
+    border: 1px solid {Theme.BORDER};
+    border-radius: {RADIUS_TABLE}px;
+    gridline-color: {Theme.BORDER_SUBTLE};
+    color: {Theme.TEXT_PRIMARY};
+    selection-background-color: {Theme.SELECTION_BG};
+    selection-color: {Theme.GOLD_BRIGHT};
+    alternate-background-color: {Theme.BG_TABLE_ALT};
+    padding: 2px;
+}}
+
+QTableView::item {{
+    padding: 5px 10px;
+    border-bottom: 1px solid {Theme.BORDER_SUBTLE};
+}}
+
+QTableView::item:selected {{
+    background-color: {Theme.SELECTION_BG};
+    color: {Theme.GOLD_BRIGHT};
+}}
+
+QTableView::item:hover {{
     background-color: {Theme.BG_HOVER};
 }}
 
@@ -612,6 +665,22 @@ QComboBox:focus {{
 QComboBox::drop-down {{
     border: none;
     width: 22px;
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+}}
+
+QComboBox::down-arrow {{
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid {Theme.TEXT_SECONDARY};
+    width: 0px;
+    height: 0px;
+}}
+
+QComboBox::down-arrow:on {{
+    border-top: none;
+    border-bottom: 5px solid {Theme.GOLD_BRIGHT};
 }}
 
 QComboBox QAbstractItemView {{
@@ -621,6 +690,13 @@ QComboBox QAbstractItemView {{
     border-radius: {RADIUS_CARD}px;
     selection-background-color: {Theme.SELECTION_BG};
     padding: 4px;
+}}
+
+QComboBox QLineEdit {{
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    color: {Theme.TEXT_PRIMARY};
 }}
 
 QGroupBox {{

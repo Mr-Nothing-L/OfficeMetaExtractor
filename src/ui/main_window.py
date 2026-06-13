@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLabel, QProgressBar, QStatusBar,
     QFileDialog, QMessageBox,
     QMenuBar, QMenu, QAction, QComboBox, QLineEdit,
-    QStackedWidget, QFrame, QToolButton
+    QStackedWidget, QFrame, QToolButton, QCheckBox
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
@@ -23,6 +23,7 @@ from .styles import DARK_STYLE
 from ..core.extractor_core import MetaExtractor
 from ..parsers import SUPPORTED_EXT
 from ..utils.logger import logger
+from ..utils.cache import get_default_cache
 from ..audit import export_to_excel as audit_export_to_excel
 
 
@@ -30,14 +31,16 @@ class ExtractionWorker(QThread):
     """Background worker for batch extraction with per-file timeout."""
 
     progress = pyqtSignal(int, int, str)
-    result = pyqtSignal(list)
+    row_ready = pyqtSignal(dict)
+    result = pyqtSignal(dict)
     finished_signal = pyqtSignal()
 
     FILE_TIMEOUT = 30
 
-    def __init__(self, filepaths: List[str]):
+    def __init__(self, filepaths: List[str], detailed: bool = False):
         super().__init__()
         self.filepaths = filepaths
+        self.detailed = detailed
         self._stop = False
 
     def _extract_with_timeout(self, extractor, filepath: str) -> dict:
@@ -47,7 +50,7 @@ class ExtractionWorker(QThread):
 
         def target():
             try:
-                result[0] = extractor.extract(filepath)
+                result[0] = extractor.extract(filepath, detailed=self.detailed)
             except Exception as e:
                 exception[0] = e
 
@@ -65,9 +68,10 @@ class ExtractionWorker(QThread):
         return result[0]
 
     def run(self):
-        extractor = MetaExtractor()
-        results = []
+        extractor = MetaExtractor(detailed=self.detailed)
         total = len(self.filepaths)
+        success_count = 0
+        fail_count = 0
 
         for i, fp in enumerate(self.filepaths):
             if self._stop:
@@ -75,25 +79,33 @@ class ExtractionWorker(QThread):
             self.progress.emit(i + 1, total, Path(fp).name)
             try:
                 result = self._extract_with_timeout(extractor, fp)
-                results.append(result)
+                success_count += 1
             except TimeoutError as e:
                 logger.warning(f"Timeout parsing {fp}: {e}")
-                results.append({
+                result = {
                     'filepath': fp,
                     'filename': Path(fp).name,
                     'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
                     'status': f'失败: 解析超时（文件可能过大或格式异常）'
-                })
+                }
+                fail_count += 1
             except Exception as e:
                 logger.error(f"Failed to extract {fp}: {e}")
-                results.append({
+                result = {
                     'filepath': fp,
                     'filename': Path(fp).name,
                     'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
                     'status': f'失败: {str(e)}'
-                })
+                }
+                fail_count += 1
 
-        self.result.emit(results)
+            self.row_ready.emit(result)
+
+        self.result.emit({
+            'total': total,
+            'success_count': success_count,
+            'fail_count': fail_count,
+        })
         self.finished_signal.emit()
 
     def stop(self):
@@ -101,28 +113,45 @@ class ExtractionWorker(QThread):
 
 
 class AuditWorker(QThread):
-    """Background worker for audit mode extraction."""
+    """Background worker for batch/audit mode extraction."""
 
     progress = pyqtSignal(int, int, str)
+    row_ready = pyqtSignal(dict)
     result = pyqtSignal(dict)
     finished_signal = pyqtSignal()
 
-    def __init__(self, project_name: str, folder_path: str):
+    def __init__(self, project_name: str, folder_path: str,
+                 files: List[str] = None, detailed: bool = False):
         super().__init__()
         self.project_name = project_name
         self.folder_path = folder_path
+        self.files = files
+        self.detailed = detailed
         self._stop = False
 
     def run(self):
-        extractor = MetaExtractor()
-        files = extractor.scan_directory(self.folder_path, recursive=True)
+        extractor = MetaExtractor(detailed=self.detailed)
+        files = self.files or extractor.scan_directory(self.folder_path, recursive=True)
         total = len(files)
+
         for i, fp in enumerate(files):
             if self._stop:
                 break
             self.progress.emit(i + 1, total, Path(fp).name)
 
-        audit_result = extractor.audit(self.project_name, self.folder_path)
+        audit_result = extractor.audit(
+            self.project_name,
+            self.folder_path,
+            detailed=self.detailed,
+            files=files,
+        )
+
+        # Emit each parsed row for cache / UI incrementally.
+        for meta in audit_result.get('results', []):
+            if self._stop:
+                break
+            self.row_ready.emit(meta.to_dict())
+
         self.result.emit(audit_result)
         self.finished_signal.emit()
 
@@ -144,6 +173,7 @@ class MainWindow(QMainWindow):
         self._audit_summary = []
         self._audit_detail = []
         self._audit_alerts = []
+        self._cache = get_default_cache()
         self._init_ui()
         self._apply_styles()
         self._init_menubar()
@@ -201,8 +231,12 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.lbl_mode)
 
         self.cmb_mode = QComboBox()
-        self.cmb_mode.addItem("招标审计", "audit")
+        self.cmb_mode.addItem("批量提取", "audit")
         self.cmb_mode.addItem("单文件提取", "single")
+        self.cmb_mode.setEditable(True)
+        self.cmb_mode.lineEdit().setReadOnly(True)
+        self.cmb_mode.lineEdit().setAlignment(Qt.AlignCenter)
+        self.cmb_mode.lineEdit().setFrame(False)
         self.cmb_mode.currentIndexChanged.connect(self._on_mode_changed)
         header_row.addWidget(self.cmb_mode)
 
@@ -218,7 +252,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(sep1)
         main_layout.addSpacing(10)
 
-        # ===== Project Name Row (audit mode) =====
+        # ===== Project Name Row (batch mode) =====
         project_row = QHBoxLayout()
         project_row.setSpacing(10)
         project_row.setContentsMargins(0, 0, 0, 0)
@@ -228,7 +262,7 @@ class MainWindow(QMainWindow):
         project_row.addWidget(self.lbl_project_name)
 
         self.edt_project_name = QLineEdit()
-        self.edt_project_name.setPlaceholderText("输入项目名称（用于模板复用检测）")
+        self.edt_project_name.setPlaceholderText("输入项目名称（用于模板关联检测）")
         project_row.addWidget(self.edt_project_name, 1)
 
         self._project_row_widget = QWidget()
@@ -240,6 +274,24 @@ class MainWindow(QMainWindow):
         self.drop_area = DropArea()
         self.drop_area.files_dropped.connect(self._on_files_dropped)
         main_layout.addWidget(self.drop_area)
+        main_layout.addSpacing(10)
+
+        # ===== Options Row =====
+        options_row = QHBoxLayout()
+        options_row.setSpacing(12)
+        options_row.setContentsMargins(0, 0, 0, 0)
+
+        self.chk_detailed = QCheckBox("深度解析（加载完整文档）")
+        self.chk_detailed.setObjectName("checkBox")
+        self.chk_detailed.setToolTip("默认仅读取 OOXML/OLE 核心属性；勾选后加载完整文档以获取更完整信息，但会占用更多内存和时间")
+        options_row.addWidget(self.chk_detailed)
+
+        options_row.addStretch()
+
+        options_widget = QWidget()
+        options_widget.setObjectName("panelRow")
+        options_widget.setLayout(options_row)
+        main_layout.addWidget(options_widget)
         main_layout.addSpacing(10)
 
         # ===== Action Buttons Row =====
@@ -295,7 +347,7 @@ class MainWindow(QMainWindow):
 
         self.btn_view_alerts = QPushButton("查看发现")
         self.btn_view_alerts.setObjectName("secondary")
-        self.btn_view_alerts.setToolTip("查看审计发现")
+        self.btn_view_alerts.setToolTip("查看批量检测发现")
         self.btn_view_alerts.clicked.connect(self._on_view_alerts)
         self.btn_view_alerts.setEnabled(False)
         action_row.addWidget(self.btn_view_alerts)
@@ -489,7 +541,7 @@ class MainWindow(QMainWindow):
         else:
             folder = QFileDialog.getExistingDirectory(self, "选择文件夹", "")
             if folder:
-                extractor = MetaExtractor()
+                extractor = MetaExtractor(detailed=self.chk_detailed.isChecked())
                 files = extractor.scan_directory(folder, recursive=True)
                 if files:
                     self._process_files(files)
@@ -502,30 +554,43 @@ class MainWindow(QMainWindow):
             project_name = os.path.basename(folder_path)
             self.edt_project_name.setText(project_name)
 
-        extractor = MetaExtractor()
+        extractor = MetaExtractor(detailed=self.chk_detailed.isChecked())
         files = extractor.scan_directory(folder_path, recursive=True)
         if not files:
             QMessageBox.information(self, "提示", "未找到支持的文件")
             return
 
+        self._cache.clear()
+        self.tbl_audit.clear_data()
         self.lbl_file_count.setText(f"{len(files)} 个文件")
-        self.lbl_status.setText(f"准备审计 {len(files)} 个文件...")
+        self.lbl_status.setText(f"准备批量提取 {len(files)} 个文件...")
 
         self.btn_export.setEnabled(False)
         self.btn_view_alerts.setEnabled(False)
         self.btn_clear.setEnabled(False)
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
+        self.chk_detailed.setEnabled(False)
 
         self.prg_progress.setMaximum(len(files))
         self.prg_progress.setValue(0)
         self.prg_progress.setVisible(True)
 
-        self.worker = AuditWorker(project_name, folder_path)
+        self.worker = AuditWorker(
+            project_name,
+            folder_path,
+            files=files,
+            detailed=self.chk_detailed.isChecked(),
+        )
         self.worker.progress.connect(self._on_progress)
+        self.worker.row_ready.connect(self._on_audit_row_ready)
         self.worker.result.connect(self._on_audit_results)
         self.worker.finished_signal.connect(self._on_finished)
         self.worker.start()
+
+    def _on_audit_row_ready(self, row: dict):
+        self._cache.append(row)
+        self.tbl_audit.append_row(row)
 
     def _on_audit_results(self, audit_result: dict):
         results = audit_result.get('results', [])
@@ -533,18 +598,9 @@ class MainWindow(QMainWindow):
         summary_table = audit_result.get('summary_table', [])
         detail_table = audit_result.get('detail_table', [])
 
-        company_risk = {}
-        for row in summary_table:
-            company = row.get('公司名称', '')
-            risk = row.get('风险等级', 'low')
-            if company:
-                company_risk[company] = risk
-
         table_data = []
         for meta in results:
             d = meta.to_dict()
-            company = d.get('company', '')
-            d['risk_level'] = company_risk.get(company, 'low')
             table_data.append(d)
 
         self.tbl_audit.set_data(table_data)
@@ -569,7 +625,7 @@ class MainWindow(QMainWindow):
         fail_count = len(results) - success_count
         alert_count = len(alerts)
 
-        self.lbl_status.setText(f"审计完成: {len(results)} 个文件, {alert_count} 条发现")
+        self.lbl_status.setText(f"批量提取完成: {len(results)} 个文件, {alert_count} 条发现")
         self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败, {alert_count} 条发现")
 
         self.btn_export.setEnabled(True)
@@ -583,7 +639,7 @@ class MainWindow(QMainWindow):
                 if p_path.suffix.lower() in SUPPORTED_EXT:
                     files.append(p)
             elif p_path.is_dir():
-                extractor = MetaExtractor()
+                extractor = MetaExtractor(detailed=self.chk_detailed.isChecked())
                 files.extend(extractor.scan_directory(p, recursive=True))
         return files
 
@@ -591,6 +647,8 @@ class MainWindow(QMainWindow):
         if not files:
             return
         files = sorted(set(files))
+        self._cache.clear()
+        self.tbl_single.clear_data()
         self.lbl_file_count.setText(f"{len(files)} 个文件")
         self.lbl_status.setText(f"准备解析 {len(files)} 个文件...")
 
@@ -599,27 +657,33 @@ class MainWindow(QMainWindow):
         self.btn_clear.setEnabled(False)
         self.btn_select_files.setEnabled(False)
         self.btn_select_folder.setEnabled(False)
+        self.chk_detailed.setEnabled(False)
 
         self.prg_progress.setMaximum(len(files))
         self.prg_progress.setValue(0)
         self.prg_progress.setVisible(True)
 
-        self.worker = ExtractionWorker(files)
+        self.worker = ExtractionWorker(files, detailed=self.chk_detailed.isChecked())
         self.worker.progress.connect(self._on_progress)
+        self.worker.row_ready.connect(self._on_single_row_ready)
         self.worker.result.connect(self._on_results)
         self.worker.finished_signal.connect(self._on_finished)
         self.worker.start()
+
+    def _on_single_row_ready(self, row: dict):
+        self._cache.append(row)
+        self.tbl_single.append_row(row)
 
     def _on_progress(self, current: int, total: int, filename: str):
         self.prg_progress.setValue(current)
         self.lbl_status.setText(f"[{current}/{total}] 正在解析: {filename}")
         self.status_bar.showMessage(f"解析中... {current}/{total} | {filename}")
 
-    def _on_results(self, results: List[dict]):
-        self.tbl_single.set_data(results)
-        self.lbl_status.setText(f"解析完成: {len(results)} 个文件")
-        success_count = sum(1 for r in results if not str(r.get('status', '')).startswith('失败'))
-        fail_count = len(results) - success_count
+    def _on_results(self, summary: dict):
+        total = summary.get('total', 0)
+        success_count = summary.get('success_count', 0)
+        fail_count = summary.get('fail_count', 0)
+        self.lbl_status.setText(f"解析完成: {total} 个文件")
         self.status_bar.showMessage(f"完成: {success_count} 成功, {fail_count} 失败")
         self.btn_export.setEnabled(True)
 
@@ -628,9 +692,11 @@ class MainWindow(QMainWindow):
         self.btn_clear.setEnabled(True)
         self.btn_select_files.setEnabled(True)
         self.btn_select_folder.setEnabled(True)
+        self.chk_detailed.setEnabled(True)
         self.worker = None
 
     def _on_clear(self):
+        self._cache.clear()
         self.tbl_single.clear_data()
         self.tbl_audit.clear_data()
         self.lbl_file_count.setText("0 个文件")
@@ -665,7 +731,7 @@ class MainWindow(QMainWindow):
 
     def _on_export_audit(self):
         if not self._audit_summary and not self._audit_detail:
-            QMessageBox.information(self, "提示", "没有审计结果可导出")
+            QMessageBox.information(self, "提示", "没有批量结果可导出")
             return
         path, _ = QFileDialog.getSaveFileName(self, "导出审计报告", "audit_report.xlsx", "Excel Files (*.xlsx)")
         if path:
@@ -679,7 +745,7 @@ class MainWindow(QMainWindow):
 
     def _on_view_alerts(self):
         if not self._audit_alerts:
-            QMessageBox.information(self, "提示", "当前没有审计发现")
+            QMessageBox.information(self, "提示", "当前没有检测发现")
             return
         dialog = AuditAlertListDialog(self._audit_alerts, parent=self)
         dialog.exec_()
@@ -701,7 +767,7 @@ class MainWindow(QMainWindow):
     def _on_about(self):
         QMessageBox.about(
             self, "关于",
-            "<b>OfficeMetaExtractor v1.0</b><br>"
+            "<b>OfficeMetaExtractor v2.0.0</b><br>"
             "提取 Office 文档和 PDF 的元信息<br><br>"
             "支持格式: DOCX, XLSX, PPTX, DOC, XLS, PPT, PDF<br><br>"
             "支持导出: CSV, JSON, Excel"
