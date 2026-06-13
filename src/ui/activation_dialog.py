@@ -26,7 +26,10 @@ class ActivationDialog(QDialog):
         layout.setSpacing(14)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        info = QLabel("请输入授权激活码。激活码与当前机器绑定，不可共享使用。")
+        info = QLabel(
+            "请输入授权激活码。激活码与当前机器绑定，不可共享使用。"
+            "如需购买，请通过外部平台下单并将机器码发送给客服获取激活码。"
+        )
         info.setWordWrap(True)
         info.setObjectName("activationInfo")
         layout.addWidget(info)
@@ -41,7 +44,7 @@ class ActivationDialog(QDialog):
         machine_layout.addWidget(self.machine_label, 1)
 
         self.btn_copy = QPushButton("复制")
-        self.btn_copy.setToolTip("复制机器码，发给客服获取激活码")
+        self.btn_copy.setToolTip("复制机器码，下单后发给客服以生成激活码")
         self.btn_copy.clicked.connect(self._on_copy_machine_code)
         machine_layout.addWidget(self.btn_copy)
         layout.addLayout(machine_layout)
@@ -51,7 +54,7 @@ class ActivationDialog(QDialog):
         self.edt_key.setObjectName("activationInput")
         layout.addWidget(self.edt_key)
 
-        purchase_link = QLabel('<a href="#" style="color: #E6B800;">还没有激活码？点击购买授权</a>')
+        purchase_link = QLabel('<a href="#" style="color: #E6B800;">还没有激活码？前往外部平台购买</a>')
         purchase_link.setOpenExternalLinks(False)
         purchase_link.setTextInteractionFlags(Qt.LinksAccessibleByMouse)
         purchase_link.linkActivated.connect(self._on_buy)

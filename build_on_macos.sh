@@ -31,6 +31,12 @@ pip install PyInstaller
 
 echo "🔨 Building macOS .app bundle..."
 
+ICON_PATH="icon/icon_blackgolden.icns"
+if [ ! -f "$ICON_PATH" ]; then
+    echo "⚠️  $ICON_PATH not found, falling back to PNG icon."
+    ICON_PATH="icon/icon_blackgolden.png"
+fi
+
 pyinstaller \
     --name="OfficeMetaExtractor" \
     --windowed \
@@ -40,6 +46,9 @@ pyinstaller \
     --workpath=build/pyinstaller \
     --specpath=build/pyinstaller \
     --paths=src \
+    --icon="$ICON_PATH" \
+    --add-data="icon/icon_blackgolden.png:icon" \
+    --add-data="icon/icon_blackgolden.icns:icon" \
     --collect-all src \
     --collect-all docx \
     --collect-all openpyxl \
@@ -51,6 +60,15 @@ pyinstaller \
     --hidden-import=PyQt5.QtGui \
     --hidden-import=PyQt5.QtWidgets \
     main.py
+
+APP_BUNDLE="dist/OfficeMetaExtractor.app"
+if [ -d "$APP_BUNDLE" ]; then
+    RESOURCES_DIR="$APP_BUNDLE/Contents/Resources"
+    mkdir -p "$RESOURCES_DIR"
+    cp "icon/icon_blackgolden.icns" "$RESOURCES_DIR/" 2>/dev/null || true
+    cp "icon/icon_blackgolden.png" "$RESOURCES_DIR/"
+    echo "📦 Copied icon resources into $RESOURCES_DIR"
+fi
 
 echo "✅ Done!"
 echo "📦 App bundle: dist/OfficeMetaExtractor.app"

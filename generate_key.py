@@ -63,8 +63,8 @@ class LicenseKeyGenerator(QWidget):
         # Days
         layout.addWidget(QLabel("有效期（天，0 表示永久授权）"))
         self.days_input = QLineEdit()
-        self.days_input.setPlaceholderText("365")
-        self.days_input.setText("365")
+        self.days_input.setPlaceholderText("0")
+        self.days_input.setText("0")
         layout.addWidget(self.days_input)
 
         # Secret

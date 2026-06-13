@@ -6,11 +6,6 @@ APP_NAME = "OfficeMetaExtractor"
 APP_VERSION = "2.0.0"
 APP_DESCRIPTION = "Extract metadata from Office documents and PDFs"
 
-# Licensing / purchase configuration
-PURCHASE_URL = "https://github.com/Mr-Nothing-L/OfficeMetaExtractor"
-TRIAL_FILE_LIMIT = 5
-TRIAL_DAYS = 14
-
 # Supported file extensions
 SUPPORTED_EXTENSIONS = {
     '.docx', '.doc',
@@ -46,3 +41,9 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 SRC_DIR = PROJECT_ROOT / "src"
 BUILD_DIR = PROJECT_ROOT / "build"
 DIST_DIR = PROJECT_ROOT / "dist"
+
+# Licensing / purchase configuration
+DOCS_DIR = PROJECT_ROOT / "docs"
+ACTIVATION_GUIDE_PATH = DOCS_DIR / "activation_guide.html"
+PURCHASE_URL = ACTIVATION_GUIDE_PATH.as_uri()
+TRIAL_DAYS = 12

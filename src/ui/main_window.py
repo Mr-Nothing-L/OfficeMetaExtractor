@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QStackedWidget, QFrame, QToolButton, QCheckBox
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QUrl
-from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtGui import QDesktopServices, QIcon
 
 from .drop_area import DropArea
 from .result_table import ResultTable
@@ -26,7 +26,8 @@ from ..core.extractor_core import MetaExtractor
 from ..parsers import SUPPORTED_EXT
 from ..utils.logger import logger
 from ..utils.cache import get_default_cache
-from ..utils.config import PURCHASE_URL, TRIAL_FILE_LIMIT
+from ..utils.config import PURCHASE_URL
+from ..utils.paths import resource_path
 from ..utils.license import get_license_status, save_license_key
 from ..audit import export_to_excel as audit_export_to_excel
 
@@ -182,6 +183,10 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         self._init_menubar()
 
+        icon_path = resource_path("icon/icon_blackgolden.png")
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
+
         logger.add_listener(self._on_log)
         self._check_license()
 
@@ -230,7 +235,13 @@ class MainWindow(QMainWindow):
         header_row.addLayout(brand_layout)
         header_row.addStretch()
 
-        # Right: mode selector
+        # Right: license action + mode selector
+        self.btn_activate = QPushButton("激活授权")
+        self.btn_activate.setObjectName("secondary")
+        self.btn_activate.setToolTip("输入激活码完成授权")
+        self.btn_activate.clicked.connect(self._on_enter_license)
+        header_row.addWidget(self.btn_activate)
+
         self.lbl_mode = QLabel("模式")
         self.lbl_mode.setObjectName("modeLabel")
         header_row.addWidget(self.lbl_mode)
@@ -536,15 +547,20 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage(status.get("message", "未授权"))
 
-    def _check_trial_limit(self, files: List[str]) -> bool:
-        """Block large batches when running under a trial/unlicensed mode."""
+    def _check_license_for_operation(self) -> bool:
+        """Ensure the app is licensed or within trial period before operation.
+
+        If the trial has expired, show the activation dialog. The user must
+        activate (or cancel and be blocked) to continue.
+        """
         status = get_license_status()
-        if status.get("mode") != "licensed" and len(files) > TRIAL_FILE_LIMIT:
-            QMessageBox.information(
-                self, "试用版限制",
-                f"试用版每次最多处理 {TRIAL_FILE_LIMIT} 个文件，请购买授权解除限制。"
-            )
-            return False
+        if status.get("mode") == "expired":
+            dialog = ActivationDialog(self)
+            result = dialog.exec_()
+            # Refresh status after dialog closes
+            status = get_license_status()
+            if result != QDialog.Accepted or status.get("mode") != "licensed":
+                return False
         return True
 
     def _on_files_dropped(self, paths: List[str]):
@@ -599,7 +615,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "提示", "未找到支持的文件")
             return
 
-        if not self._check_trial_limit(files):
+        if not self._check_license_for_operation():
             return
 
         self._cache.clear()
@@ -690,7 +706,7 @@ class MainWindow(QMainWindow):
             return
         files = sorted(set(files))
 
-        if not self._check_trial_limit(files):
+        if not self._check_license_for_operation():
             return
 
         self._cache.clear()

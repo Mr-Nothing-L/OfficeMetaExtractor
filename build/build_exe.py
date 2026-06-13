@@ -22,6 +22,10 @@ def clean():
     print("OK 清理旧构建")
 
 def build():
+    icon_ico = PROJECT_ROOT / "icon" / "icon_blackgolden.ico"
+    icon_png = PROJECT_ROOT / "icon" / "icon_blackgolden.png"
+    add_data_sep = ";" if sys.platform == "win32" else ":"
+
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--name=OfficeMetaExtractor",
@@ -33,6 +37,9 @@ def build():
         f"--workpath={BUILD_DIR}",
         f"--specpath={BUILD_DIR}",
         f"--key={AES_KEY}",
+        f"--icon={icon_ico}",
+        f"--add-data={icon_png}{add_data_sep}icon",
+        f"--add-data={icon_ico}{add_data_sep}icon",
         "--hidden-import=PyQt5.sip",
         "--hidden-import=PyQt5.QtCore",
         "--hidden-import=PyQt5.QtGui",
