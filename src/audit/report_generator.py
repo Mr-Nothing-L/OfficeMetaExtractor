@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 
 from ..utils.datamodel import DocumentMeta, AuditAlert, CompanyAuditResult
+from ..utils.datetime_util import as_naive
 
 # Excel styling constants (kept here to avoid a UI dependency)
 _EXCEL_HEADER_FILL = "B88C28"
@@ -40,9 +41,9 @@ def _build_company_results(results: List[DocumentMeta]) -> List[CompanyAuditResu
         if meta.last_modified_by:
             g['modifiers'].add(meta.last_modified_by.strip())
         if isinstance(meta.created, datetime):
-            g['created'].append(meta.created)
+            g['created'].append(as_naive(meta.created))
         if isinstance(meta.modified, datetime):
-            g['modified'].append(meta.modified)
+            g['modified'].append(as_naive(meta.modified))
         if meta.template:
             g['templates'].add(meta.template.strip())
 

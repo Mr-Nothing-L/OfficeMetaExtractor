@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from ..utils.datamodel import DocumentMeta, AuditAlert
+from ..utils.datetime_util import as_naive
 
 
 def _company_for(meta: DocumentMeta) -> str:
@@ -95,6 +96,7 @@ def _check_time_clustering(results: List[DocumentMeta],
         dt: Optional[datetime] = getattr(meta, field, None)
         if not isinstance(dt, datetime):
             continue
+        dt = as_naive(dt)
         company = _company_for(meta)
         bucket = _time_bucket(dt, threshold_minutes)
         bucket_data[bucket]['companies'].add(company)

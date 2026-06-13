@@ -39,6 +39,7 @@ class ExtractionWorker(QThread):
     row_ready = pyqtSignal(dict)
     result = pyqtSignal(dict)
     finished_signal = pyqtSignal()
+    error = pyqtSignal(str)
 
     FILE_TIMEOUT = 30
 
@@ -73,45 +74,50 @@ class ExtractionWorker(QThread):
         return result[0]
 
     def run(self):
-        extractor = MetaExtractor(detailed=self.detailed)
-        total = len(self.filepaths)
-        success_count = 0
-        fail_count = 0
+        try:
+            extractor = MetaExtractor(detailed=self.detailed)
+            total = len(self.filepaths)
+            success_count = 0
+            fail_count = 0
 
-        for i, fp in enumerate(self.filepaths):
-            if self._stop:
-                break
-            self.progress.emit(i + 1, total, Path(fp).name)
-            try:
-                result = self._extract_with_timeout(extractor, fp)
-                success_count += 1
-            except TimeoutError as e:
-                logger.warning(f"Timeout parsing {fp}: {e}")
-                result = {
-                    'filepath': fp,
-                    'filename': Path(fp).name,
-                    'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
-                    'status': f'失败: 解析超时（文件可能过大或格式异常）'
-                }
-                fail_count += 1
-            except Exception as e:
-                logger.error(f"Failed to extract {fp}: {e}")
-                result = {
-                    'filepath': fp,
-                    'filename': Path(fp).name,
-                    'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
-                    'status': f'失败: {str(e)}'
-                }
-                fail_count += 1
+            for i, fp in enumerate(self.filepaths):
+                if self._stop:
+                    break
+                self.progress.emit(i + 1, total, Path(fp).name)
+                try:
+                    result = self._extract_with_timeout(extractor, fp)
+                    success_count += 1
+                except TimeoutError as e:
+                    logger.warning(f"Timeout parsing {fp}: {e}")
+                    result = {
+                        'filepath': fp,
+                        'filename': Path(fp).name,
+                        'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
+                        'status': f'失败: 解析超时（文件可能过大或格式异常）'
+                    }
+                    fail_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to extract {fp}: {e}")
+                    result = {
+                        'filepath': fp,
+                        'filename': Path(fp).name,
+                        'format': Path(fp).suffix.upper()[1:] or 'UNKNOWN',
+                        'status': f'失败: {str(e)}'
+                    }
+                    fail_count += 1
 
-            self.row_ready.emit(result)
+                self.row_ready.emit(result)
 
-        self.result.emit({
-            'total': total,
-            'success_count': success_count,
-            'fail_count': fail_count,
-        })
-        self.finished_signal.emit()
+            self.result.emit({
+                'total': total,
+                'success_count': success_count,
+                'fail_count': fail_count,
+            })
+        except Exception as e:
+            logger.exception("ExtractionWorker crashed")
+            self.error.emit(f"批量解析失败: {e}")
+        finally:
+            self.finished_signal.emit()
 
     def stop(self):
         self._stop = True
@@ -124,6 +130,7 @@ class AuditWorker(QThread):
     row_ready = pyqtSignal(dict)
     result = pyqtSignal(dict)
     finished_signal = pyqtSignal()
+    error = pyqtSignal(str)
 
     def __init__(self, project_name: str, folder_path: str,
                  files: List[str] = None, detailed: bool = False):
@@ -135,30 +142,35 @@ class AuditWorker(QThread):
         self._stop = False
 
     def run(self):
-        extractor = MetaExtractor(detailed=self.detailed)
-        files = self.files or extractor.scan_directory(self.folder_path, recursive=True)
-        total = len(files)
+        try:
+            extractor = MetaExtractor(detailed=self.detailed)
+            files = self.files or extractor.scan_directory(self.folder_path, recursive=True)
+            total = len(files)
 
-        for i, fp in enumerate(files):
-            if self._stop:
-                break
-            self.progress.emit(i + 1, total, Path(fp).name)
+            for i, fp in enumerate(files):
+                if self._stop:
+                    break
+                self.progress.emit(i + 1, total, Path(fp).name)
 
-        audit_result = extractor.audit(
-            self.project_name,
-            self.folder_path,
-            detailed=self.detailed,
-            files=files,
-        )
+            audit_result = extractor.audit(
+                self.project_name,
+                self.folder_path,
+                detailed=self.detailed,
+                files=files,
+            )
 
-        # Emit each parsed row for cache / UI incrementally.
-        for meta in audit_result.get('results', []):
-            if self._stop:
-                break
-            self.row_ready.emit(meta.to_dict())
+            # Emit each parsed row for cache / UI incrementally.
+            for meta in audit_result.get('results', []):
+                if self._stop:
+                    break
+                self.row_ready.emit(meta.to_dict())
 
-        self.result.emit(audit_result)
-        self.finished_signal.emit()
+            self.result.emit(audit_result)
+        except Exception as e:
+            logger.exception("AuditWorker crashed")
+            self.error.emit(f"批量审计失败: {e}")
+        finally:
+            self.finished_signal.emit()
 
     def stop(self):
         self._stop = True
@@ -643,6 +655,7 @@ class MainWindow(QMainWindow):
         self.worker.progress.connect(self._on_progress)
         self.worker.row_ready.connect(self._on_audit_row_ready)
         self.worker.result.connect(self._on_audit_results)
+        self.worker.error.connect(self._on_worker_error)
         self.worker.finished_signal.connect(self._on_finished)
         self.worker.start()
 
@@ -729,6 +742,7 @@ class MainWindow(QMainWindow):
         self.worker.progress.connect(self._on_progress)
         self.worker.row_ready.connect(self._on_single_row_ready)
         self.worker.result.connect(self._on_results)
+        self.worker.error.connect(self._on_worker_error)
         self.worker.finished_signal.connect(self._on_finished)
         self.worker.start()
 
@@ -756,6 +770,11 @@ class MainWindow(QMainWindow):
         self.btn_select_folder.setEnabled(True)
         self.chk_detailed.setEnabled(True)
         self.worker = None
+
+    def _on_worker_error(self, message: str):
+        QMessageBox.critical(self, "处理失败", message)
+        self.lbl_status.setText(message)
+        self.status_bar.showMessage(message)
 
     def _on_clear(self):
         self._cache.clear()
